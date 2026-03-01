@@ -1,7 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500&family=Montserrat:wght@600;700&display=swap');
 @import "tailwindcss";
 
-/* Font: Heading Montserrat, Body Be Vietnam Pro - applied in :root below */
+/* Dark mode: class "dark" trên html thay vì prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Font: Heading Montserrat, Body Be Vietnam Pro */
 :root {
   font-family: 'Be Vietnam Pro', system-ui, sans-serif;
   line-height: 1.5;
@@ -13,6 +16,15 @@
   -webkit-font-smoothing: antialiased;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #171717;
+  color: #e5e5e5;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -22,4 +34,80 @@ body {
 h1, h2, h3 {
   font-family: 'Montserrat', sans-serif;
   font-weight: 600;
+}
+
+/* In bảng: window.print + @media print */
+@media print {
+  body,
+  html,
+  html.dark,
+  html.dark body {
+    background: white !important;
+    color: #1a1a1a !important;
+  }
+
+  /* Giữ màu nền ô khi in */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* In toàn bộ 1 trang: thu nhỏ font, padding */
+  .print-area {
+    font-size: 11px;
+  }
+  .print-area table {
+    font-size: 11px;
+  }
+  .print-area th,
+  .print-area td {
+    padding: 2px 4px !important;
+  }
+  .print-area thead th {
+    padding: 3px 4px !important;
+  }
+
+  /* Bảng: viền rõ khi in */
+  table, table th, table td {
+    border-color: #d4d4d4 !important;
+  }
+  thead th {
+    background: #f5f5f5 !important;
+    color: #1a1a1a !important;
+  }
+
+  /* Màu nền hàng ngày nghỉ (cuối tuần, ngày lễ, rest_day) */
+  tr.print-rest td {
+    background: #e5e5e5 !important;
+    color: #b91c1c !important;
+  }
+
+  /* Màu nền hàng ngày làm việc chưa điền giờ */
+  tr.print-empty td {
+    background: #fef2f2 !important;
+    color: #1a1a1a !important;
+  }
+
+  /* Hàng ngày làm việc bình thường */
+  tbody tr:not(.print-rest):not(.print-empty) td {
+    background: white !important;
+    color: #1a1a1a !important;
+  }
+
+  /* Ẩn overlay, modal, nút bấm khi in */
+  [data-print-skip],
+  .loading-overlay,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Tránh cắt bảng giữa trang */
+  table {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: A4;
+    margin: 0.8cm;
+  }
 }

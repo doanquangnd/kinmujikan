@@ -4,7 +4,7 @@
  * POST /api/work-records => { year, month, records: [...] }
  * PUT /api/work-records => { records: [...] }
  */
-import { sql } from '../lib/db.js';
+import { sql, getNeonClient } from '../lib/db.js';
 import { require_auth } from '../lib/auth.js';
 import { json_response } from '../lib/response.js';
 
@@ -55,6 +55,7 @@ export default async function handler(req, res) {
         return json_response(res, 400, { error: 'Bad Request', message: 'year không hợp lệ' });
       }
       if (month >= 1 && month <= 12) {
+        const t0 = Date.now();
         const from = `${year}-${String(month).padStart(2, '0')}-01`;
         const last = new Date(year, month, 0).getDate();
         const to = `${year}-${String(month).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
@@ -66,9 +67,16 @@ export default async function handler(req, res) {
         `;
         const records = result.rows.map((r) => {
           const wd = r.work_date;
-          const work_date = wd != null
-            ? (typeof wd === 'string' ? wd : wd.toISOString?.()).slice(0, 10)
-            : null;
+          let work_date = null;
+          if (wd != null) {
+            if (typeof wd === 'string') {
+              work_date = wd.slice(0, 10);
+            } else if (wd instanceof Date) {
+              work_date = `${wd.getFullYear()}-${String(wd.getMonth() + 1).padStart(2, '0')}-${String(wd.getDate()).padStart(2, '0')}`;
+            } else {
+              work_date = String(wd).slice(0, 10);
+            }
+          }
           return {
           id: parseInt(r.id, 10),
           work_date,
@@ -79,8 +87,14 @@ export default async function handler(req, res) {
           rest_day: !!r.rest_day,
         };
         });
+        const queryMs = Math.round(Date.now() - t0);
+        res.setHeader('Server-Timing', `db;dur=${queryMs};desc="query records"`);
         return json_response(res, 200, { records });
       }
+      const t0 = Date.now();
+      // Dùng date range thay vì EXTRACT để tận dụng index idx_work_records_user_date
+      const from_year = `${year}-01-01`;
+      const to_year = `${year + 1}-01-01`;
       const result = await sql`
         SELECT
           EXTRACT(YEAR FROM work_date)::int AS y,
@@ -94,7 +108,7 @@ export default async function handler(req, res) {
             END
           )::int AS total_minutes
         FROM work_records
-        WHERE user_id = ${user_id} AND EXTRACT(YEAR FROM work_date) = ${year}
+        WHERE user_id = ${user_id} AND work_date >= ${from_year} AND work_date < ${to_year}
         GROUP BY EXTRACT(YEAR FROM work_date), EXTRACT(MONTH FROM work_date)
         ORDER BY y DESC, m DESC
       `;
@@ -104,6 +118,8 @@ export default async function handler(req, res) {
         label: `${r.y}年${String(r.m).padStart(2, '0')}月`,
         total_minutes: r.total_minutes,
       }));
+      const queryMs = Math.round(Date.now() - t0);
+      res.setHeader('Server-Timing', `db;dur=${queryMs};desc="query months"`);
       return json_response(res, 200, { months });
     }
 
@@ -140,7 +156,8 @@ export default async function handler(req, res) {
       }
 
       const last_day = new Date(y, m, 0).getDate();
-      let created = 0;
+      const client = getNeonClient();
+      const insertQueries = [];
       for (const r of records) {
         const day = parseInt(r.day || '0', 10);
         if (day < 1 || day > last_day) continue;
@@ -150,13 +167,15 @@ export default async function handler(req, res) {
         const break_minutes = normalize_break(r.break_minutes);
         const note = r.note != null ? String(r.note).trim().slice(0, 500) || null : null;
         const rest_day = r.rest_day ? 1 : 0;
-        await sql`
-          INSERT INTO work_records (user_id, work_date, time_start, time_end, break_minutes, note, rest_day)
-          VALUES (${user_id}, ${work_date}, ${time_start}, ${time_end}, ${break_minutes}, ${note}, ${rest_day})
-        `;
-        created++;
+        insertQueries.push(
+          client`INSERT INTO work_records (user_id, work_date, time_start, time_end, break_minutes, note, rest_day)
+            VALUES (${user_id}, ${work_date}, ${time_start}, ${time_end}, ${break_minutes}, ${note}, ${rest_day})`
+        );
       }
-      return json_response(res, 201, { created, year: y, month: m });
+      if (insertQueries.length > 0) {
+        await client.transaction(insertQueries);
+      }
+      return json_response(res, 201, { created: insertQueries.length, year: y, month: m });
     }
 
     if (req.method === 'PUT') {
@@ -174,7 +193,8 @@ export default async function handler(req, res) {
       `;
       const allowedSet = new Set(allowed.rows.map((r) => parseInt(r.id, 10)));
 
-      let updated = 0;
+      const client = getNeonClient();
+      const updateQueries = [];
       for (const r of records) {
         const id = parseInt(r.id, 10);
         if (id <= 0 || !allowedSet.has(id)) continue;
@@ -183,15 +203,16 @@ export default async function handler(req, res) {
         const break_minutes = normalize_break(r.break_minutes);
         const note = r.note != null ? String(r.note).trim().slice(0, 500) || null : null;
         const rest_day = r.rest_day ? 1 : 0;
-        const result = await sql`
-          UPDATE work_records
-          SET time_start = ${time_start}, time_end = ${time_end}, break_minutes = ${break_minutes}, note = ${note}, rest_day = ${rest_day}, updated_at = NOW()
-          WHERE id = ${id} AND user_id = ${user_id}
-          RETURNING id
-        `;
-        updated += result.rows.length;
+        updateQueries.push(
+          client`UPDATE work_records
+            SET time_start = ${time_start}, time_end = ${time_end}, break_minutes = ${break_minutes}, note = ${note}, rest_day = ${rest_day}, updated_at = NOW()
+            WHERE id = ${id} AND user_id = ${user_id}`
+        );
       }
-      return json_response(res, 200, { updated });
+      if (updateQueries.length > 0) {
+        await client.transaction(updateQueries);
+      }
+      return json_response(res, 200, { updated: updateQueries.length });
     }
   } catch (err) {
     if (err.status) return json_response(res, err.status, err.body);

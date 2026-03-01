@@ -8,11 +8,12 @@
 - Modal Thêm mới: chọn năm/tháng (disable tháng đã có và tháng sau hơn 1 tháng), 開始/終了/休憩, đóng Esc, aria; giới hạn tạo tối đa đến tháng sau (frontend + backend).
 - Trang tháng: bảng theo ngày, 休, 開始/終了 (HH:mm), 休憩(分), 総業務時間, 備考; highlight 土・日・ngày lễ; ngày lễ từ JSON; validation 開始 < 終了; custom modal cảnh báo ngày chưa nhập giờ; điền từ ngày trước (nút ←); export CSV; sticky header, hover hàng, focus ring; cảnh báo rời trang (beforeunload + confirm); overlay loading khi tải/save; chặn URL tạo tháng chưa cho phép và xem/sửa tháng chưa có bản ghi.
 - Toast: góc trên phải, tự đóng 3s, dừng khi hover; style theo loại (success/info/warning/error), icon, thanh tiến trình, nút đóng.
-- API: GET theo năm/tháng, POST bulk (validation tháng duy nhất + không cho tạo sau hơn 1 tháng), PUT từng bản ghi.
+- API: GET theo năm/tháng, POST/PUT dùng Neon transaction (batch 1 round-trip thay vì 31 tuần tự); validation tháng duy nhất + không cho tạo sau hơn 1 tháng.
+- Deploy: Vercel + Neon; vercel.json rewrite SPA (negative lookahead loại trừ /src, /api, /@vite...).
 - UI: border, không shadow/gradient/blur; font Montserrat/Be Vietnam Pro; spacing nhất quán.
+- Dark mode: toggle góc trái, localStorage (kinmu_theme), fallback prefers-color-scheme.
 
 ### Chưa làm (có thể làm tiếp)
-- Dark mode (class `dark:`, toggle, localStorage).
 - Focus trap trong modal (optional).
 - In bảng (window.print + @media print).
 
@@ -31,7 +32,7 @@
 | Dashboard: block tháng chưa có + nút Thêm nhanh | Xong | Hiện toàn bộ tháng thiếu; tháng chưa cho phép tạo: disable + title "Chưa cho phép tạo". |
 | Export CSV (client-side) | Xong | Nút "Xuất CSV" ở chế độ xem, tải file UTF-8. |
 | Select năm: chỉ hiện tại + tối đa 10 năm trước | Xong | Dashboard dùng dashboardYears. |
-| Giới hạn tạo mới: chỉ đến tháng sau | Xong | Frontend (Dashboard modal + MonthForm block) và backend create.php validate, trả 400 nếu quá hạn. |
+| Giới hạn tạo mới: chỉ đến tháng sau | Xong | Frontend (Dashboard modal + MonthForm block) và backend api/work-records.js validate, trả 400 nếu quá hạn. |
 | MonthForm: chặn URL tạo tháng chưa cho phép | Xong | isNew && isMoreThanOneMonthAhead → block "Không thể tạo" + Về Dashboard. |
 | MonthForm: chặn xem/sửa tháng chưa có bản ghi | Xong | !isNew && hasNoRecords → block "Chưa có bản ghi" + Về Dashboard. |
 | Toast thông báo (top right, 3s, stop on hover) | Xong | ToastContext, useToast(); style theo loại, icon, progress bar, nút đóng. |
@@ -39,6 +40,9 @@
 | Custom modal thay alert cảnh báo ngày chưa nhập | Xong | confirmEmptyDaysModal, Huỷ / Vẫn lưu, Esc đóng. |
 | Loading skeleton Dashboard | Xong | Vài khối placeholder animate-pulse thay "Đang tải...". |
 | Nút Thử lại khi lỗi tải tháng (xem/sửa) | Xong | Phân biệt loadError vs hasNoRecords; khi loadError hiển thị "Lỗi tải dữ liệu" + Thử lại + Về Dashboard. |
+| API batch: POST/PUT dùng Neon transaction | Xong | 31 INSERT/UPDATE gộp 1 transaction, giảm thời gian lưu từ ~2–3s xuống ~200–500ms. |
+| Hiển thị ngày nghỉ nhất quán local/production | Xong | mergeRecordsIntoRows ép null khi rest_day; MonthFormTable luôn hiển thị --:-- và 0:00 cho ngày nghỉ. |
+| vercel dev: rewrite loại trừ file tĩnh | Xong | vercel.json dùng negative lookahead (?!api/|src/|@vite/...) để SPA rewrite không chặn JS/CSS. |
 
 ---
 
@@ -62,6 +66,13 @@
 ### 3.6 Cảnh báo rời trang
 - Đã làm: beforeunload + confirm khi điều hướng.
 
+### 3.7 Gợi ý mới (chưa làm)
+- Điền xuống từ đây: chọn một hàng, điền 開始/終了/休憩 xuống các ngày làm việc tiếp theo (trong tháng).
+- Sao chép tháng: nút "Sao chép từ tháng trước" để tạo nhanh tháng mới từ dữ liệu tháng trước.
+- Thống kê nhanh: tổng ngày làm, ngày nghỉ, trung bình giờ/ngày trên Dashboard hoặc trang tháng.
+- Offline / PWA: cache dữ liệu, cho phép xem khi mất mạng (optional, effort lớn).
+- Cron ping: Vercel Cron job gọi API định kỳ để giảm cold start (nếu dùng free tier).
+
 ---
 
 ## 4. Cải tiến UX/UI (đã làm / chưa làm)
@@ -74,7 +85,8 @@
 | Modal: Esc, role/aria | Xong. Focus trap: chưa. |
 | Loading: overlay khi tải/save; skeleton Dashboard | Xong. |
 | Lỗi API: message + nút Thử lại (màn tháng) | Xong. |
-| Dark mode | Chưa. |
+| Dark mode | Xong. Toggle góc trái, localStorage, prefers-color-scheme fallback. |
+| Hiển thị ngày nghỉ (休) nhất quán | Xong. Ngày nghỉ luôn --:-- và 0:00, không phụ thuộc dữ liệu. |
 
 ---
 
@@ -84,6 +96,16 @@
 |--------|----------|--------|
 | 1 | In bảng (window.print + @media print) | Nhỏ |
 | 2 | Focus trap trong modal (optional) | Nhỏ |
-| 3 | Dark mode | Lớn |
+| 3 | Điền xuống từ đây (một hàng điền nhiều ngày) | Trung bình |
+| 4 | Sao chép tháng từ tháng trước | Trung bình |
+| 5 | Thống kê nhanh (tổng ngày làm, trung bình giờ) | Nhỏ |
 
-Tài liệu này cập nhật theo tình trạng triển khai; khi làm tiếp bám theo UI rules (không shadow, border, font, spacing, không emoji, animation tối thiểu).
+---
+
+## 6. Ghi chú kỹ thuật
+
+- **vercel dev**: Dùng `.env.local` local; dữ liệu phụ thuộc DATABASE_URL (cùng DB = cùng dữ liệu). Không cần push/build để chạy vercel dev.
+- **Performance**: POST/PUT dùng Neon `transaction()`; cold start Vercel/Neon free tier có thể thêm 1–3s lần đầu.
+- **UI rules**: Không shadow, border, font Montserrat/Be Vietnam Pro, spacing nhất quán, không emoji, animation tối thiểu (180–250ms, ease-out).
+
+Tài liệu này cập nhật theo tình trạng triển khai; khi làm tiếp bám theo UI rules.

@@ -116,7 +116,7 @@ function ToastItem({ id, message, type, onClose }) {
   return (
     <div
       role="alert"
-      className={`border rounded-xl bg-white px-4 py-3.5 text-base text-neutral-800 min-w-[20rem] max-w-md ${style.border}`}
+      className={`border rounded-xl bg-white dark:bg-neutral-800 px-4 py-3.5 text-base text-neutral-800 dark:text-neutral-200 min-w-[20rem] max-w-md ${style.border}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -126,7 +126,7 @@ function ToastItem({ id, message, type, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 p-1 rounded text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
+          className="shrink-0 p-1 rounded text-neutral-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/40 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
           aria-label="Đóng"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -136,7 +136,7 @@ function ToastItem({ id, message, type, onClose }) {
         </button>
       </div>
       <div
-        className={`h-1 rounded-b-xl mt-3 -mx-4 -mb-3 overflow-hidden bg-neutral-100`}
+        className="h-1 rounded-b-xl mt-3 -mx-4 -mb-3 overflow-hidden bg-neutral-100 dark:bg-neutral-700"
         aria-hidden
       >
         <div

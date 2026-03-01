@@ -4,6 +4,7 @@ import { fetchRecordsByMonth, createMonthRecords, updateRecords } from '../api/w
 import { isMoreThanOneMonthAhead, getCurrentYearInAppTimezone, getCurrentMonthInAppTimezone } from '../utils/dateHelpers.js';
 import { buildEmptyRows, mergeRecordsIntoRows } from '../utils/workRecordRows.js';
 import { calcWorkMinutes, minutesToTimeString, toHHmm, timeToMinutes } from '../utils/formatTime.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import LoadingOverlay from '../components/LoadingOverlay.jsx';
 import ConfirmEmptyDaysModal from '../components/ConfirmEmptyDaysModal.jsx';
@@ -32,6 +33,7 @@ export default function MonthForm() {
   const [loadError, setLoadError] = useState(false);
   const [confirmEmptyDaysModal, setConfirmEmptyDaysModal] = useState(null);
   const isDirtyRef = useRef(false);
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const initialRows = useMemo(
@@ -121,6 +123,10 @@ export default function MonthForm() {
       };
       return next;
     });
+  }
+
+  function handlePrint() {
+    window.print();
   }
 
   function handleExportCSV() {
@@ -236,7 +242,7 @@ export default function MonthForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-white dark:bg-neutral-900">
         <LoadingOverlay message="Đang tải..." />
       </div>
     );
@@ -244,16 +250,16 @@ export default function MonthForm() {
 
   if (isNew && isMoreThanOneMonthAhead(year, month)) {
     return (
-      <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto">
-        <section className="border border-neutral-200 rounded-lg p-8 text-center">
-          <h2 className="text-base font-semibold text-neutral-800 mb-2">Không thể tạo</h2>
-          <p className="text-sm text-neutral-600 mb-6">
+      <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto bg-white dark:bg-neutral-900">
+        <section className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-8 text-center bg-white dark:bg-neutral-800/50">
+          <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-100 mb-2">Không thể tạo</h2>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
             Chỉ được tạo tối đa đến tháng sau so với hiện tại. Tháng {year}年{String(month).padStart(2, '0')}月 chưa cho phép tạo.
           </p>
           <button
             type="button"
             onClick={() => navigate('/', { replace: true })}
-            className="border border-neutral-700 bg-neutral-800 text-white rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
+            className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
           >
             Về Dashboard
           </button>
@@ -264,12 +270,12 @@ export default function MonthForm() {
 
   if (!isNew && hasNoRecords) {
     return (
-      <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto">
-        <section className="border border-neutral-200 rounded-lg p-8 text-center">
-          <h2 className="text-base font-semibold text-neutral-800 mb-2">
+      <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto bg-white dark:bg-neutral-900">
+        <section className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-8 text-center bg-white dark:bg-neutral-800/50">
+          <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
             {loadError ? 'Lỗi tải dữ liệu' : 'Chưa có bản ghi'}
           </h2>
-          <p className="text-sm text-neutral-600 mb-6">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
             {loadError
               ? 'Không thể tải dữ liệu tháng. Kiểm tra kết nối và thử lại.'
               : `Tháng ${year}年${String(month).padStart(2, '0')}月 chưa có dữ liệu. Vui lòng tạo mới từ Dashboard.`}
@@ -279,7 +285,7 @@ export default function MonthForm() {
               <button
                 type="button"
                 onClick={() => fetchMonth()}
-                className="border border-neutral-700 bg-neutral-800 text-white rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
+                className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
               >
                 Thử lại
               </button>
@@ -287,7 +293,7 @@ export default function MonthForm() {
             <button
               type="button"
               onClick={() => navigate('/', { replace: true })}
-              className="border border-neutral-300 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
+              className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
               Về Dashboard
             </button>
@@ -298,22 +304,31 @@ export default function MonthForm() {
   }
 
   const label = `${year}年${String(month).padStart(2, '0')}月`;
+  const displayName = user?.display_name || user?.email || '';
 
   return (
-    <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto">
-      <header className="flex items-center justify-between mb-6 border-b border-neutral-200 pb-4">
-        <h1 className="text-lg font-semibold">{label}</h1>
-        <button
-          type="button"
-          onClick={() => handleNavigateAway('/')}
-          className="text-sm border border-neutral-300 rounded-md px-3 py-1 hover:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
-        >
-          Về Dashboard
-        </button>
+    <div className="print-area min-h-screen px-4 py-8 max-w-4xl mx-auto bg-white dark:bg-neutral-900 print:py-2 print:px-2">
+      <header className="grid grid-cols-3 items-center mb-6 border-b border-neutral-200 dark:border-neutral-700 pb-4 print:mb-4 print:pb-2">
+        <div className="text-left text-lg font-semibold text-neutral-900 dark:text-neutral-100 print:text-base">
+          {label}
+        </div>
+        <div className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100 print:text-base">
+          作業実績表
+        </div>
+        <div className="text-right flex items-center justify-end gap-2">
+          <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 print:text-base">{displayName}</span>
+          <button
+            type="button"
+            onClick={() => handleNavigateAway('/')}
+            className="print:hidden text-sm border border-teal-300 dark:border-teal-700 rounded-md px-3 py-1 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
+          >
+            Về Dashboard
+          </button>
+        </div>
       </header>
 
       {error && (
-        <p className="mb-4 text-red-600 text-sm border border-red-200 rounded-md p-2 bg-red-50">
+        <p className="print:hidden mb-4 text-red-600 dark:text-red-400 text-sm border border-red-200 dark:border-red-800 rounded-md p-2 bg-red-50 dark:bg-red-950/50">
           {error}
         </p>
       )}
@@ -329,18 +344,18 @@ export default function MonthForm() {
         />
 
         {!readOnly && (
-          <div className="mt-6 flex gap-2">
+          <div className="print:hidden mt-6 flex gap-2">
             <button
               type="button"
               onClick={() => handleNavigateAway('/')}
-              className="border border-neutral-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
+              className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="border border-neutral-700 bg-neutral-800 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+              className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
               Lưu
             </button>
@@ -348,18 +363,25 @@ export default function MonthForm() {
         )}
 
         {readOnly && (
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="print:hidden mt-6 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
+            >
+              In
+            </button>
             <button
               type="button"
               onClick={handleExportCSV}
-              className="border border-neutral-300 rounded-md px-4 py-2 text-sm font-medium hover:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
+              className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
               Xuất CSV
             </button>
             <button
               type="button"
               onClick={() => navigate(`/month/${year}/${month}/edit`)}
-              className="border border-neutral-700 rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset"
+              className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
               Sửa
             </button>
