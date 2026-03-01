@@ -22,13 +22,25 @@ export async function api_request(path, options = {}) {
   const token = get_token();
   if (token) headers['Authorization'] = 'Bearer ' + token;
 
-  const res = await fetch(url, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch (e) {
+    const msg = (e.message?.includes('fetch') || e.message?.includes('Failed') || e.cause?.code === 'ECONNREFUSED')
+      ? 'Không kết nối được backend. Kiểm tra backend đang chạy (PHP: port 8000, Node: vercel dev port 3000).'
+      : e.message;
+    const err = new Error(msg);
+    err.status = 0;
+    err.data = {};
+    throw err;
+  }
+
   const contentType = res.headers.get('Content-Type') || '';
   const isJson = contentType.includes('application/json');
   const data = isJson ? await res.json().catch(() => ({})) : {};
 
   if (!res.ok) {
-    const message = data.message || data.error || (res.status === 500 ? 'Lỗi máy chủ (500). Kiểm tra backend đang chạy và log backend/storage/logs/error.log.' : 'Request failed');
+    const message = data.message || data.error || (res.status === 500 ? 'Lỗi máy chủ (500). Kiểm tra backend đang chạy.' : 'Request failed');
     const err = new Error(message);
     err.status = res.status;
     err.data = data;

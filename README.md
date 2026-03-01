@@ -1,6 +1,10 @@
 # 勤務時間 (Kinmu Jikan)
 
-Ứng dụng quản lý thời gian làm việc theo tháng. Backend PHP thuần + MySQL, Frontend React + TailwindCSS.
+Ứng dụng quản lý thời gian làm việc theo tháng.
+
+- **Backend PHP**: PHP thuần + MySQL
+- **Backend Node.js**: Node.js + Neon Postgres (thư mục `backend-nodejs/`)
+- **Frontend**: React + Vite + TailwindCSS
 
 ## Yêu cầu
 
@@ -62,8 +66,11 @@ Frontend chạy tại http://localhost:5174 (hoặc port Vite báo).
 
 **Frontend (Vercel) + Backend (InfinityFree):** `vercel.json` đã cấu hình rewrite `/api/*` proxy tới backend. Frontend gọi `/api/...` (cùng domain) nên không cần CORS. **Không set** `VITE_API_URL` khi deploy Vercel. Nếu đổi URL backend: sửa `destination` trong `vercel.json`.
 
+**Backend Node.js (Neon Postgres):** Xem `backend-nodejs/README.md` và `docs/TESTING.md` để chạy và test với backend Node.
+
 ## Cấu trúc
 
 - `backend/` – PHP thuần: `public/` (entry), `config/`, `includes/` (db, jwt, auth), `api/` (auth, work-records), `sql/`
+- `backend-nodejs/` – Node.js + Neon Postgres: `api/` (serverless), `lib/`, `sql/`
 - `frontend/` – React (Vite): `src/api/`, `src/context/`, `src/pages/`, `src/utils/`, `src/constants/`
-- `docs/` – Phân tích yêu cầu và công nghệ
+- `docs/` – Phân tích yêu cầu, công nghệ, **hướng dẫn test** (`docs/TESTING.md`)

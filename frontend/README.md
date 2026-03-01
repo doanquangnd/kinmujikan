@@ -1,16 +1,55 @@
-# React + Vite
+# 勤務時間 (Kinmu Jikan) - Frontend + API
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite + TailwindCSS. API Node.js (Neon Postgres) gộp trong cùng project.
 
-Currently, two official plugins are available:
+## Cấu trúc
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- `src/` – React app
+- `api/` – Serverless API (auth, work-records)
+- `lib/` – db, auth, response (dùng bởi api/)
+- `sql/schema.sql` – Schema PostgreSQL
 
-## React Compiler
+## Deploy Vercel (root directory: frontend)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Thêm Postgres
 
-## Expanding the ESLint configuration
+Vercel Dashboard > Project > Storage > Create Database > Postgres. Vercel tự thêm `POSTGRES_URL`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. Chạy schema
+
+Trong Postgres Query tab, chạy nội dung `sql/schema.sql`.
+
+### 3. Biến môi trường
+
+Project Settings > Environment Variables:
+
+- `JWT_SECRET` – chuỗi bí mật (vd: `openssl rand -base64 32`)
+- `POSTGRES_URL` / `DATABASE_URL` – tự động khi thêm Postgres
+
+### 4. Deploy
+
+Push lên GitHub. Vercel tự build và deploy. Request `/api/*` chạy serverless trong cùng project.
+
+## Chạy local (vercel dev)
+
+```bash
+npm install
+cp .env.example .env
+# Sửa .env: POSTGRES_URL (hoặc DATABASE_URL), JWT_SECRET
+vercel dev
+```
+
+Mở http://localhost:3000. Frontend và API chạy cùng process.
+
+## Chạy local với backend PHP riêng
+
+```bash
+# Terminal 1: backend PHP
+cd ../backend && php -S 0.0.0.0:8000 -t public public/router.php
+
+# Terminal 2: frontend
+npm install
+cp .env.example .env
+# VITE_PROXY_TARGET=http://127.0.0.1:8000
+npm run dev
+```
