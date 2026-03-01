@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     send_cors_preflight();
 }
 
-// Chỉ chấp nhận request từ frontend (Origin khớp CORS_ORIGIN)
+// Khi CORS_RESTRICT_ORIGIN=1: chỉ chấp nhận request có Origin trong CORS_ORIGINS
 if (!is_origin_allowed_for_request()) {
     $payload = ['error' => 'Forbidden', 'message' => 'Chỉ chấp nhận request từ nguồn được phép'];
     if (defined('APP_ENV') && APP_ENV === 'development') {

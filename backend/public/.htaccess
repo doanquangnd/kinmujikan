@@ -1,4 +1,5 @@
-# Apache: gửi mọi request đến index.php (trừ file tồn tại)
+# Apache: gửi mọi request (kể cả OPTIONS) đến index.php (trừ file tồn tại).
+# Preflight OPTIONS phải tới PHP thì mới có header Access-Control-Allow-Origin.
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /

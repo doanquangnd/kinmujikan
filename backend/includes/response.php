@@ -5,23 +5,33 @@
 
 require_once dirname(__DIR__) . '/config/database.php';
 
+/**
+ * Trả origin được phép gửi trong header Access-Control-Allow-Origin.
+ * Khi CORS_RESTRICT_ORIGIN=0: luôn '*'. Khi =1: khớp CORS_ORIGINS hoặc null.
+ */
 function get_allowed_origin(): ?string
 {
+    $restrict = defined('CORS_RESTRICT_ORIGIN') ? (string) CORS_RESTRICT_ORIGIN : '0';
+    if ($restrict === '' || $restrict === '0' || strtolower($restrict) === 'false') {
+        return '*';
+    }
+
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $origin = trim($origin);
     if ($origin === '') return null;
+    $origin_normalized = rtrim($origin, '/');
 
-    $allow = defined('CORS_ORIGINS') ? (string) CORS_ORIGINS : (defined('CORS_ORIGIN') ? (string) CORS_ORIGIN : '*');
+    $allow = defined('CORS_ORIGINS') ? (string) CORS_ORIGINS : '';
     $allow = trim($allow);
     if ($allow === '' || $allow === '*') {
         return '*';
     }
 
     $allowed_list = array_values(array_filter(array_map(function ($a) {
-        return trim($a, " \t\r\n");
+        return rtrim(trim($a, " \t\r\n"), '/');
     }, explode(',', $allow))));
     foreach ($allowed_list as $a) {
-        if ($a !== '' && hash_equals($a, $origin)) {
+        if ($a !== '' && (hash_equals($a, $origin) || hash_equals($a, $origin_normalized))) {
             return $origin;
         }
     }
@@ -29,15 +39,13 @@ function get_allowed_origin(): ?string
 }
 
 /**
- * Kiểm tra request có Origin hợp lệ (chỉ chấp nhận từ frontend đã cấu hình).
- * Khi CORS_ORIGIN/CORS_ORIGINS không phải '*': nếu có Origin thì phải khớp danh sách;
- * nếu không có Origin (request same-origin hoặc từ curl/Postman) thì cho phép để app chạy khi frontend và API cùng host:port.
+ * Khi CORS_RESTRICT_ORIGIN=1: chỉ cho phép request có Origin khớp CORS_ORIGINS.
+ * Khi =0: cho phép mọi request.
  */
 function is_origin_allowed_for_request(): bool
 {
-    $allow = defined('CORS_ORIGINS') ? (string) CORS_ORIGINS : (defined('CORS_ORIGIN') ? (string) CORS_ORIGIN : '*');
-    $allow = trim($allow);
-    if ($allow === '' || $allow === '*') {
+    $restrict = defined('CORS_RESTRICT_ORIGIN') ? (string) CORS_RESTRICT_ORIGIN : '0';
+    if ($restrict === '' || $restrict === '0' || strtolower($restrict) === 'false') {
         return true;
     }
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -73,11 +81,10 @@ function send_cors_headers(): void
     $allowed = get_allowed_origin();
     if ($allowed === '*') {
         header('Access-Control-Allow-Origin: *');
-    } elseif ($allowed) {
+    } elseif ($allowed !== null) {
         header('Access-Control-Allow-Origin: ' . $allowed);
         header('Vary: Origin');
     }
-
     header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization');
 }

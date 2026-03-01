@@ -60,6 +60,8 @@ Frontend chạy tại http://localhost:5174 (hoặc port Vite báo).
 - Container frontend cần **publish port 5174** ra host, ví dụ `ports: - "5174:5174"`. Sau đó mở http://localhost:5174 trên trình duyệt.
 - Nếu backend cũng trong container: trong `frontend/.env` set `VITE_PROXY_TARGET=http://<tên-service-backend>:8000` (tên service trong docker-compose, ví dụ `http://workspace:8000` hoặc `http://backend:8000`) để proxy từ container frontend tới container backend.
 
+**Frontend (Vercel) + Backend (InfinityFree):** `vercel.json` đã cấu hình rewrite `/api/*` proxy tới backend. Frontend gọi `/api/...` (cùng domain) nên không cần CORS. **Không set** `VITE_API_URL` khi deploy Vercel. Nếu đổi URL backend: sửa `destination` trong `vercel.json`.
+
 ## Cấu trúc
 
 - `backend/` – PHP thuần: `public/` (entry), `config/`, `includes/` (db, jwt, auth), `api/` (auth, work-records), `sql/`
