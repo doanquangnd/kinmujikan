@@ -1,8 +1,0 @@
-# Biến môi trường (chứa secret)
-.env
-.env.local
-.env.*.local
-
-# Log và dữ liệu runtime (thư mục được tạo tự động bởi code)
-storage/logs/*.log
-storage/rate_limit/*.json

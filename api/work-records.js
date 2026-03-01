@@ -64,15 +64,21 @@ export default async function handler(req, res) {
           WHERE user_id = ${user_id} AND work_date >= ${from} AND work_date <= ${to}
           ORDER BY work_date
         `;
-        const records = result.rows.map((r) => ({
+        const records = result.rows.map((r) => {
+          const wd = r.work_date;
+          const work_date = wd != null
+            ? (typeof wd === 'string' ? wd : wd.toISOString?.()).slice(0, 10)
+            : null;
+          return {
           id: parseInt(r.id, 10),
-          work_date: r.work_date,
+          work_date,
           time_start: r.time_start ? r.time_start.slice(0, 5) : null,
           time_end: r.time_end ? r.time_end.slice(0, 5) : null,
           break_minutes: r.break_minutes != null ? parseInt(r.break_minutes, 10) : null,
           note: r.note,
           rest_day: !!r.rest_day,
-        }));
+        };
+        });
         return json_response(res, 200, { records });
       }
       const result = await sql`
