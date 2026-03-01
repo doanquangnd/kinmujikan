@@ -44,7 +44,9 @@ export default function Login() {
             <label htmlFor="email" className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">Email</label>
             <input
               id="email"
+              name="username"
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -55,7 +57,9 @@ export default function Login() {
             <label htmlFor="password" className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">Mật khẩu</label>
             <input
               id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

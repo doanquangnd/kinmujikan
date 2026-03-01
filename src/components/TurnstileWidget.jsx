@@ -58,6 +58,12 @@ export default function TurnstileWidget({ onReady, theme = 'light', size = 'norm
             sitekey: SITE_KEY,
             theme,
             size,
+            language: 'auto',
+            'error-callback': (errorCode) => {
+              console.warn('[Turnstile] error:', errorCode);
+              setScriptError(true);
+              return true;
+            },
           });
           widgetIdRef.current = id;
           onReady?.(id);

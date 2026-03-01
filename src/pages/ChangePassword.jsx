@@ -54,7 +54,9 @@ export default function ChangePassword() {
             </label>
             <input
               id="currentPassword"
+              name="currentPassword"
               type="password"
+              autoComplete="current-password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
@@ -67,7 +69,9 @@ export default function ChangePassword() {
             </label>
             <input
               id="newPassword"
+              name="newPassword"
               type="password"
+              autoComplete="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -81,7 +85,9 @@ export default function ChangePassword() {
             </label>
             <input
               id="confirmPassword"
+              name="confirmPassword"
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required

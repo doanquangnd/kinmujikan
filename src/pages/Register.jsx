@@ -45,7 +45,9 @@ export default function Register() {
             <label htmlFor="email" className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">Email</label>
             <input
               id="email"
+              name="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -56,7 +58,9 @@ export default function Register() {
             <label htmlFor="password" className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">Mật khẩu</label>
             <input
               id="password"
+              name="password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -68,7 +72,9 @@ export default function Register() {
             <label htmlFor="displayName" className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">Tên hiển thị (tùy chọn)</label>
             <input
               id="displayName"
+              name="displayName"
               type="text"
+              autoComplete="name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"

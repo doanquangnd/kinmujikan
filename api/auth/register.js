@@ -6,6 +6,7 @@ import { sql } from '../../lib/db.js';
 import bcrypt from 'bcryptjs';
 import { jwt_encode } from '../../lib/auth.js';
 import { json_response } from '../../lib/response.js';
+import { check_rate_limit } from '../../lib/rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -16,6 +17,15 @@ export default async function handler(req, res) {
   }
   if (req.method !== 'POST') {
     return json_response(res, 405, { error: 'Method Not Allowed' });
+  }
+
+  const rate = await check_rate_limit(req, 'register');
+  if (!rate.allowed) {
+    res.setHeader('Retry-After', String(rate.retryAfter));
+    return json_response(res, 429, {
+      error: 'Too Many Requests',
+      message: `Quá nhiều lần thử. Thử lại sau ${rate.retryAfter} giây.`,
+    });
   }
 
   try {

@@ -4,5 +4,20 @@
       "source": "/((?!api/|src/|@vite/|@id/|@react-refresh|node_modules/|assets/|vite\\.svg).*)",
       "destination": "/index.html"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive, nosnippet, noimageindex"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-src 'self' https://challenges.cloudflare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com"
+        }
+      ]
+    }
   ]
 }
