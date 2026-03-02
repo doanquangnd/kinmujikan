@@ -2,14 +2,14 @@
  * POST /api/auth/register
  * Body: email, password, display_name?, turnstile_response?
  */
-import { sql } from '../../lib/db';
+import { sql } from '../../lib/db.js';
 import bcrypt from 'bcryptjs';
-import { jwt_encode } from '../../lib/auth';
-import { json_response, get_cors_origin } from '../../lib/response';
-import { build_auth_cookie } from '../../lib/cookie';
-import { check_rate_limit } from '../../lib/rateLimit';
-import { verify_turnstile } from '../../lib/turnstile';
-import { registerSchema } from '../../lib/validation';
+import { jwt_encode } from '../../lib/auth.js';
+import { json_response, get_cors_origin } from '../../lib/response.js';
+import { build_auth_cookie } from '../../lib/cookie.js';
+import { check_rate_limit } from '../../lib/rateLimit.js';
+import { verify_turnstile } from '../../lib/turnstile.js';
+import { registerSchema } from '../../lib/validation.js';
 
 interface AuthRequest {
   method?: string;

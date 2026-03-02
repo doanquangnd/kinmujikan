@@ -7,9 +7,9 @@
  * SQL Injection: Tất cả query dùng @neondatabase/serverless tagged template với tham số hóa
  * (${user_id}, ${email}, ...). Không có string concatenation, an toàn khỏi SQL injection.
  */
-import { sql, getNeonClient } from '../lib/db';
-import { require_auth } from '../lib/auth';
-import { json_response, get_cors_origin } from '../lib/response';
+import { sql, getNeonClient } from '../lib/db.js';
+import { require_auth } from '../lib/auth.js';
+import { json_response, get_cors_origin } from '../lib/response.js';
 
 function normalize_hhmm(val: unknown): string | null {
   if (val == null || val === '') return null;

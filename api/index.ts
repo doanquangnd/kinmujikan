@@ -1,7 +1,7 @@
 /**
  * GET /api - Healthcheck
  */
-import { json_response, get_cors_origin } from '../lib/response';
+import { json_response, get_cors_origin } from '../lib/response.js';
 
 interface ApiRequest {
   method?: string;

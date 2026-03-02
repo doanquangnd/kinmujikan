@@ -1,7 +1,7 @@
 /**
  * Helper thiết lập HttpOnly Secure Cookie cho JWT.
  */
-import { COOKIE_NAME } from './auth';
+import { COOKIE_NAME } from './auth.js';
 
 const MAX_AGE_DAYS = 7;
 const MAX_AGE_SECONDS = MAX_AGE_DAYS * 24 * 60 * 60;

@@ -2,8 +2,8 @@
  * POST /api/auth/logout
  * Xóa HttpOnly cookie (client gọi với credentials để cookie được gửi).
  */
-import { json_response, get_cors_origin } from '../../lib/response';
-import { build_clear_auth_cookie } from '../../lib/cookie';
+import { json_response, get_cors_origin } from '../../lib/response.js';
+import { build_clear_auth_cookie } from '../../lib/cookie.js';
 
 interface LogoutRequest {
   method?: string;

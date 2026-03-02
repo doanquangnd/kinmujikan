@@ -2,7 +2,7 @@
  * Rate limit dùng PostgreSQL (Neon).
  * Giới hạn số request theo IP + endpoint trong cửa sổ thời gian cố định (1 phút).
  */
-import { sql } from './db';
+import { sql } from './db.js';
 
 const WINDOW_SECONDS = 60;
 const LIMITS: Record<string, number> = {

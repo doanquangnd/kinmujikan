@@ -1,9 +1,9 @@
 /**
  * GET /api/auth/me
  */
-import { sql } from '../../lib/db';
-import { get_user_id_from_request } from '../../lib/auth';
-import { json_response, get_cors_origin } from '../../lib/response';
+import { sql } from '../../lib/db.js';
+import { get_user_id_from_request } from '../../lib/auth.js';
+import { json_response, get_cors_origin } from '../../lib/response.js';
 
 interface AuthRequest {
   method?: string;

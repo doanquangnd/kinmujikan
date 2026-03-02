@@ -2,11 +2,11 @@
  * POST /api/auth/change-password
  * Body: current_password, new_password
  */
-import { sql } from '../../lib/db';
+import { sql } from '../../lib/db.js';
 import bcrypt from 'bcryptjs';
-import { require_auth } from '../../lib/auth';
-import { json_response, get_cors_origin } from '../../lib/response';
-import { changePasswordSchema } from '../../lib/validation';
+import { require_auth } from '../../lib/auth.js';
+import { json_response, get_cors_origin } from '../../lib/response.js';
+import { changePasswordSchema } from '../../lib/validation.js';
 
 interface AuthRequest {
   method?: string;

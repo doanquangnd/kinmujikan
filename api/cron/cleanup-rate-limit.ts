@@ -3,7 +3,7 @@
  * Cron job: dọn dẹp bảng rate_limit, xoá các row đã hết hạn.
  * Vercel gửi CRON_SECRET trong header Authorization: Bearer <secret>.
  */
-import { cleanup_rate_limit } from '../../lib/rateLimit';
+import { cleanup_rate_limit } from '../../lib/rateLimit.js';
 
 interface CronRequest {
   method?: string;
