@@ -24,7 +24,7 @@ Mở http://localhost:3000. Frontend và API chạy cùng process.
 
 1. Vercel Dashboard > Project > Root Directory: để trống hoặc `.`
 2. Storage > Postgres > chạy `sql/schema.sql`
-3. Environment Variables: `JWT_SECRET`, `POSTGRES_URL`
+3. Environment Variables: `JWT_SECRET`, `POSTGRES_URL`, `CRON_SECRET` (tối thiểu 16 ký tự, cho cron cleanup rate_limit)
 4. Push lên GitHub
 
 ## 4. Checklist chức năng

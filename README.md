@@ -2,6 +2,8 @@
 
 Ứng dụng quản lý thời gian làm việc theo tháng. React + Vite + TailwindCSS, API Node.js (Neon Postgres) gộp trong cùng project.
 
+Xem [CHANGELOG.md](./CHANGELOG.md) để biết lịch sử thay đổi.
+
 ## Yêu cầu
 
 - Node.js 18+
@@ -11,10 +13,10 @@
 ## Cấu trúc
 
 ```
-├── api/           # Serverless API (auth, work-records)
-├── lib/           # db, auth, response (dùng bởi api/)
+├── api/           # Serverless API (auth, work-records, cron)
+├── lib/           # db, auth, rateLimit, turnstile (dùng bởi api/)
 ├── sql/           # schema.sql
-├── src/           # React app
+├── src/           # React app (TypeScript)
 ├── public/
 ├── scripts/
 └── docs/
@@ -37,7 +39,7 @@ Mở http://localhost:3000. Frontend và API chạy cùng process.
 
 1. Vercel Dashboard > Project > **Settings** > **General** > Root Directory: để trống hoặc `.` (project root)
 2. Storage > Create Database > Postgres. Chạy `sql/schema.sql` trong Query tab.
-3. Environment Variables: `JWT_SECRET`, `POSTGRES_URL` (tự động khi thêm Postgres)
+3. Environment Variables: `JWT_SECRET`, `POSTGRES_URL` (tự động khi thêm Postgres), `CRON_SECRET` (tối thiểu 16 ký tự, cho cron dọn rate_limit)
 4. Push lên GitHub – Vercel tự deploy.
 
 ## Test local với DB production
