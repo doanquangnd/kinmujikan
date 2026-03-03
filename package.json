@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "npm run build:api && vercel dev",
     "build": "npm run build:api && vite build",
     "build:api": "tsc -p tsconfig.api.json",
     "lint": "eslint .",
@@ -14,9 +15,11 @@
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "bcryptjs": "^2.4.3",
+    "i18next": "^25.8.13",
     "jsonwebtoken": "^9.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-i18next": "^16.5.4",
     "react-router-dom": "^7.13.1",
     "zod": "^4.3.6"
   },
@@ -37,6 +40,7 @@
     "globals": "^16.5.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vite-plugin-csp-guard": "^3.0.0"
   }
 }

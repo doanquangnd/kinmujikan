@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { calcWorkMinutes, minutesToTimeString, toHHmm } from '@/utils/formatTime';
 import type { WorkRecordRow } from '@/types';
 
@@ -14,6 +15,9 @@ interface MonthFormRowProps {
   canFillFromPrev: boolean;
   onUpdateRow: (index: number, field: keyof WorkRecordRow, value: unknown) => void;
   onFillFromPrevious: (index: number) => void;
+  fillFromPrevTitle: string;
+  timePlaceholder: string;
+  breakPlaceholder: string;
 }
 
 function MonthFormRow({
@@ -24,6 +28,9 @@ function MonthFormRow({
   canFillFromPrev,
   onUpdateRow,
   onFillFromPrevious,
+  fillFromPrevTitle,
+  timePlaceholder,
+  breakPlaceholder,
 }: MonthFormRowProps) {
   const isWeekendOrHoliday = row.weekdayIndex === 0 || row.weekdayIndex === 6 || row.holidayName;
   const isRestStyle = isWeekendOrHoliday || row.rest_day;
@@ -36,7 +43,7 @@ function MonthFormRow({
       : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100';
   const restChecked = Boolean(isWeekendOrHoliday || row.rest_day);
   const restDisabled = Boolean(isWeekendOrHoliday);
-  const timeDisplay = (t: string | null | undefined) => (t ? toHHmm(t) || '--:--' : '--:--');
+  const timeDisplay = (t: string | null | undefined) => (t ? toHHmm(t) || timePlaceholder : timePlaceholder);
   const canEditTime = !readOnly && (!row.rest_day || isWeekendOrHoliday);
   const timeInputValue = (t: string | null | undefined) => (t != null && t !== '' ? String(t) : '');
 
@@ -64,7 +71,7 @@ function MonthFormRow({
               type="button"
               onClick={() => onFillFromPrevious(index)}
               className="text-xs border border-teal-300 dark:border-teal-700 rounded px-1 py-0.5 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500"
-              title="Điền từ ngày trước"
+              title={fillFromPrevTitle}
             >
               ←
             </button>
@@ -76,7 +83,7 @@ function MonthFormRow({
               type="text"
               inputMode="numeric"
               maxLength={5}
-              placeholder="--:--"
+              placeholder={timePlaceholder}
               value={timeInputValue(row.time_start)}
               onChange={(e) => {
                 const raw = e.target.value.trim();
@@ -97,7 +104,7 @@ function MonthFormRow({
               className="w-full border-0 bg-transparent p-0 text-inherit min-w-[4rem] text-center font-mono focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-500 focus:ring-inset rounded"
             />
           ) : (
-            '--:--'
+            timePlaceholder
           )}
         </div>
       </td>
@@ -108,7 +115,7 @@ function MonthFormRow({
             <input
               type="text"
               inputMode="numeric"
-              placeholder="--:--"
+              placeholder={timePlaceholder}
               maxLength={5}
               value={timeInputValue(row.time_end)}
               onChange={(e) => {
@@ -130,7 +137,7 @@ function MonthFormRow({
             className="w-full border-0 bg-transparent p-0 text-inherit min-w-[4rem] text-center font-mono focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-inset rounded"
           />
         ) : (
-          '--:--'
+          timePlaceholder
         )}
       </td>
       <td className={`border-r p-1 text-center ${cellClass}`}>
@@ -140,7 +147,7 @@ function MonthFormRow({
           <input
             type="number"
             min={0}
-            placeholder="--"
+            placeholder={breakPlaceholder}
             value={row.break_minutes ?? ''}
             onChange={(e) => onUpdateRow(index, 'break_minutes', e.target.value === '' ? null : Number(e.target.value))}
             className="w-full border-0 bg-transparent p-0 text-inherit text-center min-w-0 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-500 focus:ring-inset rounded"
@@ -183,6 +190,7 @@ export default function MonthFormTable({
   onUpdateRow,
   onFillFromPrevious,
 }: MonthFormTableProps) {
+  const { t } = useTranslation();
   const kijunNissuu = rows.filter(
     (r) => r.weekdayIndex !== 0 && r.weekdayIndex !== 6 && !r.holidayName
   ).length;
@@ -196,14 +204,14 @@ export default function MonthFormTable({
         <table className="w-full text-sm border-collapse">
           <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
             <tr>
-              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-12 text-neutral-900 dark:text-neutral-100">日</th>
-              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-12 text-neutral-900 dark:text-neutral-100">曜</th>
-              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-10 text-neutral-900 dark:text-neutral-100">休</th>
-              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">開始</th>
-              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">終了</th>
-              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">休憩(分)</th>
-              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">総業務時間</th>
-              <th className="p-2 text-left font-medium min-w-[8rem] text-neutral-900 dark:text-neutral-100">備考</th>
+              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-12 text-neutral-900 dark:text-neutral-100">{t('table.day')}</th>
+              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-12 text-neutral-900 dark:text-neutral-100">{t('table.weekday')}</th>
+              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-10 text-neutral-900 dark:text-neutral-100">{t('table.rest')}</th>
+              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">{t('table.start')}</th>
+              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">{t('table.end')}</th>
+              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">{t('table.break')}</th>
+              <th className="border-r border-neutral-200 dark:border-neutral-700 p-2 text-center font-medium w-20 text-neutral-900 dark:text-neutral-100">{t('table.totalTime')}</th>
+              <th className="p-2 text-left font-medium min-w-[8rem] text-neutral-900 dark:text-neutral-100">{t('table.note')}</th>
             </tr>
           </thead>
           <tbody>
@@ -221,6 +229,9 @@ export default function MonthFormTable({
                   canFillFromPrev={canFillFromPrev}
                   onUpdateRow={onUpdateRow}
                   onFillFromPrevious={onFillFromPrevious}
+                  fillFromPrevTitle={t('table.fillFromPrev')}
+                  timePlaceholder={t('table.timePlaceholder')}
+                  breakPlaceholder={t('table.breakPlaceholder')}
                 />
               );
             })}
@@ -229,15 +240,15 @@ export default function MonthFormTable({
       </div>
       <div className="border-t-2 border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 flex flex-wrap items-center gap-6 text-sm font-medium text-neutral-900 dark:text-neutral-100 print:px-2 print:py-2 print:gap-4 print:text-xs">
         <div className="flex items-center gap-2">
-          <span>基準日数</span>
+          <span>{t('table.baseDays')}</span>
           <span>{kijunNissuu}日</span>
         </div>
         <div className="flex items-center gap-2">
-          <span>実稼動日数</span>
+          <span>{t('table.workDays')}</span>
           <span>{jitsukadouNissuu}日</span>
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <span>合計</span>
+          <span>{t('table.total')}</span>
           <span>{minutesToTimeString(totalMinutes)}</span>
         </div>
       </div>

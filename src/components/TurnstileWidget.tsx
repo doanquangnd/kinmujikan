@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
 const TURNSTILE_SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -50,18 +51,28 @@ export function resetTurnstile(widgetId: string | null | undefined): void {
 
 interface TurnstileWidgetProps {
   onReady?: (widgetId: string) => void;
+  /** Gọi khi sẵn sàng submit: true = có thể submit (skip hoặc widget ready), false = lỗi widget */
+  onReadyStateChange?: (ready: boolean) => void;
   theme?: 'light' | 'dark' | 'auto';
   size?: 'normal' | 'compact';
 }
 
 export default function TurnstileWidget({
   onReady,
+  onReadyStateChange,
   theme = 'light',
   size = 'normal',
 }: TurnstileWidgetProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [scriptError, setScriptError] = useState(false);
+
+  useEffect(() => {
+    if (!SITE_KEY || SKIP_WIDGET_ON_LOCAL) {
+      onReadyStateChange?.(true);
+    }
+  }, [onReadyStateChange]);
 
   useEffect(() => {
     if (!SITE_KEY || !containerRef.current || SKIP_WIDGET_ON_LOCAL) return;
@@ -82,16 +93,22 @@ export default function TurnstileWidget({
             language: 'auto',
             'error-callback': () => {
               setScriptError(true);
+              onReadyStateChange?.(false);
               return true;
             },
           });
           widgetIdRef.current = id;
           onReady?.(id);
+          onReadyStateChange?.(true);
         } catch {
           setScriptError(true);
+          onReadyStateChange?.(false);
         }
       })
-      .catch(() => setScriptError(true));
+      .catch(() => {
+        setScriptError(true);
+        onReadyStateChange?.(false);
+      });
 
     return () => {
       cancelled = true;
@@ -104,20 +121,20 @@ export default function TurnstileWidget({
       }
       widgetIdRef.current = null;
     };
-  }, [SITE_KEY, theme, size, onReady]);
+  }, [SITE_KEY, theme, size, onReady, onReadyStateChange]);
 
   if (!SITE_KEY) return null;
   if (SKIP_WIDGET_ON_LOCAL) {
     return (
       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-        Trên localhost Turnstile được bỏ qua. Để test: VITE_TURNSTILE_TEST_LOCAL=true
+        {t('turnstile.skipLocalhost')}
       </p>
     );
   }
   if (scriptError) {
     return (
       <p className="text-sm text-amber-600 dark:text-amber-400">
-        Turnstile không tải được. Thử trình duyệt khác hoặc tắt extension.
+        {t('turnstile.loadError')}
       </p>
     );
   }

@@ -1,9 +1,11 @@
 /**
  * Nút bật/tắt dark mode. SVG inline (sun/moon).
  */
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 
 export default function ThemeToggle() {
+  const { t } = useTranslation();
   const { dark, toggle } = useTheme();
 
   return (
@@ -11,7 +13,7 @@ export default function ThemeToggle() {
       type="button"
       onClick={toggle}
       className="p-2 rounded-md border border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-950/30 hover:border-teal-400 dark:hover:border-teal-600 hover:bg-teal-100 dark:hover:bg-teal-900/50 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
-      aria-label={dark ? 'Bật sáng' : 'Bật tối'}
+      aria-label={dark ? t('theme.light') : t('theme.dark')}
     >
       {dark ? (
         <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

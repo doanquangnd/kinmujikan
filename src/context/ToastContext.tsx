@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type ToastType = 'success' | 'info' | 'warning' | 'error';
 
@@ -16,9 +17,6 @@ interface ToastContextValue {
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
-
-const AUTO_CLOSE_MS = 3000;
-const TICK_MS = 50;
 
 const TYPE_STYLES: Record<ToastType, { iconBg: string; iconStroke: string; border: string; bar: string }> = {
   success: {
@@ -109,35 +107,20 @@ interface ToastItemProps {
  * Một toast: icon trái, nội dung, nút đóng, thanh tiến trình dưới. Tự đóng 3s, dừng khi hover.
  */
 function ToastItem({ message, type, onClose }: ToastItemProps) {
-  const [remainingMs, setRemainingMs] = useState(AUTO_CLOSE_MS);
+  const { t } = useTranslation();
   const [paused, setPaused] = useState(false);
   const style = TYPE_STYLES[type] ?? TYPE_STYLES.info;
 
-  useEffect(() => {
-    if (paused || remainingMs <= 0) return;
-    const tid = setInterval(() => {
-      setRemainingMs((prev) => {
-        const next = prev - TICK_MS;
-        if (next <= 0) {
-          // Hoãn onClose để tránh cập nhật ToastProvider trong lúc render ToastItem
-          queueMicrotask(onClose);
-          return 0;
-        }
-        return next;
-      });
-    }, TICK_MS);
-    return () => clearInterval(tid);
-  }, [paused, remainingMs, onClose]);
-
   const handleMouseEnter = () => setPaused(true);
   const handleMouseLeave = () => setPaused(false);
-
-  const progressPercent = (remainingMs / AUTO_CLOSE_MS) * 100;
+  const handleAnimationEnd = () => {
+    queueMicrotask(onClose);
+  };
 
   return (
     <div
       role="alert"
-      className={`border rounded-xl bg-white dark:bg-neutral-800 px-4 py-3.5 text-base text-neutral-800 dark:text-neutral-200 min-w-[20rem] max-w-md ${style.border}`}
+      className={`border rounded-lg bg-white dark:bg-neutral-800 px-4 py-3.5 text-base text-neutral-800 dark:text-neutral-200 min-w-[20rem] max-w-md ${style.border}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -148,7 +131,7 @@ function ToastItem({ message, type, onClose }: ToastItemProps) {
           type="button"
           onClick={onClose}
           className="shrink-0 p-1 rounded text-neutral-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/40 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
-          aria-label="Đóng"
+          aria-label={t('toast.close')}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
@@ -161,8 +144,8 @@ function ToastItem({ message, type, onClose }: ToastItemProps) {
         aria-hidden
       >
         <div
-          className={`h-full transition-[width] duration-75 ease-linear ${style.bar}`}
-          style={{ width: `${progressPercent}%` }}
+          className={`h-full toast-progress-bar ${paused ? 'paused' : ''} ${style.bar}`}
+          onAnimationEnd={handleAnimationEnd}
         />
       </div>
     </div>
@@ -184,12 +167,12 @@ export function ToastContainer() {
       aria-live="polite"
     >
       <div className="flex flex-col gap-3 pointer-events-auto">
-        {toasts.map((t) => (
+        {toasts.map((item) => (
           <ToastItem
-            key={t.id}
-            message={t.message}
-            type={t.type ?? 'info'}
-            onClose={() => removeToast(t.id)}
+            key={item.id}
+            message={item.message}
+            type={item.type ?? 'info'}
+            onClose={() => removeToast(item.id)}
           />
         ))}
       </div>
@@ -212,7 +195,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
   }, []);
 
   const removeToast = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
   const toast = useCallback(

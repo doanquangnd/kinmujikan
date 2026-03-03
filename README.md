@@ -1,6 +1,8 @@
 # 勤務時間 (Kinmu Jikan)
 
-Ứng dụng quản lý thời gian làm việc theo tháng. React + Vite + TailwindCSS, API Node.js (Neon Postgres) gộp trong cùng project.
+Ứng dụng quản lý, ghi chú thời gian làm việc theo tháng với template phổ biến tại Nhật. 
+
+React + Vite + TailwindCSS, API Node.js (Neon Postgres) .
 
 Xem [CHANGELOG.md](./CHANGELOG.md) để biết lịch sử thay đổi.
 

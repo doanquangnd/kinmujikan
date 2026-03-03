@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchMonthsByYear } from '@/api/workRecords';
@@ -10,6 +11,7 @@ import { useFocusTrap } from '@/hooks/useFocusTrap';
 const currentYear = getCurrentYearInAppTimezone();
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [year, setYear] = useState(currentYear);
@@ -103,7 +105,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen px-4 py-8 max-w-2xl mx-auto bg-white dark:bg-neutral-900">
       <header className="flex items-center justify-between mb-8 border-b border-neutral-200 dark:border-neutral-700 pb-4">
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">勤務時間</h1>
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{t('app.title')}</h1>
         <div ref={userMenuRef} className="relative">
           <button
             type="button"
@@ -128,7 +130,7 @@ export default function Dashboard() {
                 onClick={() => setUserMenuOpen(false)}
                 className="block w-full text-left px-4 py-2 text-sm text-teal-800 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-900/50 focus:outline-none focus:bg-teal-50 dark:focus:bg-teal-900/50"
               >
-                Đổi mật khẩu
+                {t('auth.changePassword')}
               </Link>
               <button
                 type="button"
@@ -139,7 +141,7 @@ export default function Dashboard() {
                 }}
                 className="block w-full text-left px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950/50 text-red-700 dark:text-red-400 focus:outline-none focus:bg-red-50 dark:focus:bg-red-950/50"
               >
-                Đăng xuất
+                {t('auth.logout')}
               </button>
             </div>
           )}
@@ -148,7 +150,7 @@ export default function Dashboard() {
 
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <label className="flex items-center gap-2">
-          <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">Năm:</span>
+          <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">{t('dashboard.yearLabel')}</span>
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
@@ -164,7 +166,7 @@ export default function Dashboard() {
           onClick={() => setModalOpen(true)}
           className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 hover:border-teal-700 dark:hover:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
         >
-          Thêm mới
+          {t('dashboard.addNew')}
         </button>
       </div>
 
@@ -186,21 +188,21 @@ export default function Dashboard() {
         </ul>
       ) : months.length === 0 ? (
         <section className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-8 text-center bg-white dark:bg-neutral-800/50">
-          <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-200 mb-2">Chưa có bản ghi nào</h2>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">Năm {year} chưa có tháng nào. Thêm tháng đầu tiên để bắt đầu ghi 勤務時間.</p>
+          <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-200 mb-2">{t('dashboard.noRecords')}</h2>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">{t('dashboard.noMonthsInYear', { year })}</p>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
           >
-            Thêm tháng đầu tiên
+            {t('dashboard.addFirstMonth')}
           </button>
         </section>
       ) : (
         <>
         {missingMonths.length > 0 && (
           <section className="mb-6 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-800/50">
-            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Tháng chưa có trong {year}年</h2>
+            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">{t('dashboard.monthsMissing', { year })}</h2>
             <div className="flex flex-wrap gap-2">
               {missingMonths.map((m) => {
                 const tooFar = isMoreThanOneMonthAhead(year, m);
@@ -209,7 +211,7 @@ export default function Dashboard() {
                   key={m}
                   type="button"
                   disabled={tooFar}
-                  title={tooFar ? 'Chưa cho phép tạo' : undefined}
+                  title={tooFar ? t('dashboard.notAllowedCreate') : undefined}
                   onClick={tooFar ? undefined : () => openModalForMonth(year, m)}
                   className={`rounded-md px-3 py-1.5 text-sm border focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset ${
                       tooFar
@@ -232,7 +234,7 @@ export default function Dashboard() {
             >
               <span className="font-medium text-neutral-900 dark:text-neutral-100">{m.label}</span>
               <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                総業務時間: {minutesToTimeString(m.total_minutes)}
+                {t('dashboard.totalWorkTime')} {minutesToTimeString(m.total_minutes)}
               </span>
               <div className="flex gap-2">
                 <button
@@ -240,14 +242,14 @@ export default function Dashboard() {
                   onClick={() => navigate(`/month/${m.year}/${m.month}`)}
                   className="border border-teal-300 dark:border-teal-700 rounded-md px-3 py-1 text-sm hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200"
                 >
-                  Xem
+                  {t('dashboard.view')}
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate(`/month/${m.year}/${m.month}/edit`)}
                   className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-3 py-1 text-sm hover:bg-teal-700 dark:hover:bg-teal-600"
                 >
-                  Sửa
+                  {t('dashboard.edit')}
                 </button>
               </div>
             </li>
@@ -269,10 +271,10 @@ export default function Dashboard() {
             className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 w-full max-w-sm"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="modal-title" className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">Thêm tháng mới</h2>
+            <h2 id="modal-title" className="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">{t('dashboard.addMonth')}</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">Năm</label>
+                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.year')}</label>
                 <select
                   value={modalYear}
                   onChange={(e) => setModalYear(Number(e.target.value))}
@@ -284,7 +286,7 @@ export default function Dashboard() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">Tháng</label>
+                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.month')}</label>
                 <select
                   value={modalMonth}
                   onChange={(e) => setModalMonth(Number(e.target.value))}
@@ -294,21 +296,21 @@ export default function Dashboard() {
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                     <option key={m} value={m} disabled={isMonthDisabled(m)}>
                       {m}月
-                      {isMonthExists(m) ? ' (đã có)' : ''}
-                      {isMonthTooFar(m) ? ' (chưa cho phép tạo)' : ''}
+                      {isMonthExists(m) ? ` (${t('dashboard.monthExistsShort')})` : ''}
+                      {isMonthTooFar(m) ? ` (${t('dashboard.monthTooFarShort')})` : ''}
                     </option>
                   ))}
                 </select>
                 {(isMonthExists(modalMonth) || isMonthTooFar(modalMonth)) && (
                   <p id="month-hint" className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                     {isMonthExists(modalMonth)
-                      ? 'Tháng này đã có bản ghi. Chọn tháng khác.'
-                      : 'Chỉ được tạo tối đa đến tháng sau so với hiện tại.'}
+                      ? t('dashboard.monthExists')
+                      : t('dashboard.monthTooFar')}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">開始 (giờ bắt đầu)</label>
+                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.startTime')}</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -335,7 +337,7 @@ export default function Dashboard() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">終了 (giờ kết thúc)</label>
+                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.endTime')}</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -362,7 +364,7 @@ export default function Dashboard() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">休憩 (phút)</label>
+                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.breakMinutes')}</label>
                 <input
                   type="number"
                   min={0}
@@ -378,14 +380,14 @@ export default function Dashboard() {
                 onClick={() => setModalOpen(false)}
                 className="flex-1 border border-teal-300 dark:border-teal-700 rounded-md py-2 text-sm text-teal-800 dark:text-teal-200 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40"
               >
-                Hủy
+                {t('dashboard.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmAdd}
                 className="flex-1 border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600"
               >
-                Xác nhận
+                {t('dashboard.confirm')}
               </button>
             </div>
           </div>
@@ -406,16 +408,16 @@ export default function Dashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="logout-modal-title" className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
-              Xác nhận đăng xuất
+              {t('dashboard.confirmLogout')}
             </h2>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">Bạn có chắc muốn đăng xuất?</p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">{t('dashboard.confirmLogoutMessage')}</p>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setLogoutConfirmOpen(false)}
                 className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
               >
-                Hủy
+                {t('dashboard.cancel')}
               </button>
               <button
                 type="button"
@@ -425,7 +427,7 @@ export default function Dashboard() {
                 }}
                 className="border border-red-600 dark:border-red-500 bg-red-600 dark:bg-red-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 dark:focus:ring-red-500 focus:ring-inset"
               >
-                Đăng xuất
+                {t('auth.logout')}
               </button>
             </div>
           </div>

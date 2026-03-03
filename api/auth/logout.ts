@@ -1,9 +1,10 @@
 /**
  * POST /api/auth/logout
- * Xóa HttpOnly cookie (client gọi với credentials để cookie được gửi).
+ * Xóa HttpOnly cookie. Chỉ set cookie xóa khi có token hợp lệ.
  */
 import { json_response, get_cors_origin } from '../../lib/response.js';
 import { build_clear_auth_cookie } from '../../lib/cookie.js';
+import { get_user_id_from_request } from '../../lib/auth.js';
 
 interface LogoutRequest {
   method?: string;
@@ -29,5 +30,7 @@ export default async function handler(req: LogoutRequest, res: LogoutResponse): 
     return;
   }
 
-  json_response(res, 200, { ok: true }, { req, setCookie: build_clear_auth_cookie() });
+  const user_id = get_user_id_from_request(req);
+  const setCookie = user_id != null ? build_clear_auth_cookie() : undefined;
+  json_response(res, 200, { ok: true }, { req, setCookie });
 }

@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
@@ -11,11 +13,12 @@ import ChangePassword from '@/pages/ChangePassword';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-900">
-        <p className="text-neutral-500 dark:text-neutral-400">Đang tải...</p>
+        <p className="text-neutral-500 dark:text-neutral-400">{t('app.loading')}</p>
       </div>
     );
   }
@@ -79,14 +82,15 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <ToastProvider>
+        <ToastProvider>
+          <AuthProvider>
             <AppRoutes />
-            <div className="fixed left-4 top-4 z-40 print:hidden">
+            <div className="fixed left-4 top-4 z-40 print:hidden flex items-center gap-2">
+              <LanguageSwitcher />
               <ThemeToggle />
             </div>
-          </ToastProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

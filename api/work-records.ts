@@ -9,6 +9,7 @@
  */
 import { sql, getNeonClient } from '../lib/db.js';
 import { require_auth } from '../lib/auth.js';
+import { check_rate_limit } from '../lib/rateLimit.js';
 import { json_response, get_cors_origin } from '../lib/response.js';
 
 function normalize_hhmm(val: unknown): string | null {
@@ -78,6 +79,18 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
     const err = e as AuthError;
     json_response(res, err.status || 401, err.body || { error: 'Unauthorized' }, { req });
     return;
+  }
+
+  if (req.method === 'POST' || req.method === 'PUT') {
+    const rate = await check_rate_limit(req, 'work_records_write');
+    if (!rate.allowed) {
+      res.setHeader('Retry-After', String(rate.retryAfter));
+      json_response(res, 429, {
+        error: 'Too Many Requests',
+        message: `Quá nhiều thao tác. Thử lại sau ${rate.retryAfter} giây.`,
+      }, { req });
+      return;
+    }
   }
 
   try {

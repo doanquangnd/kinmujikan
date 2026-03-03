@@ -4,7 +4,7 @@
 
 set -e
 cd "$(dirname "$0")/.."
-CSV="japan_holidays.csv"
+CSV="scripts/japan_holidays_utf8.csv"
 OUT="src/constants/japan_holidays.json"
 TMP_CSV=$(mktemp)
 trap 'rm -f "$TMP_CSV"' EXIT

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { fetchRecordsByMonth, createMonthRecords, updateRecords } from '@/api/workRecords';
 import type { CreateRecordInput, UpdateRecordInput } from '@/api/workRecords';
@@ -9,11 +10,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import ConfirmEmptyDaysModal from '@/components/ConfirmEmptyDaysModal';
+import ConfirmNavigateModal from '@/components/ConfirmNavigateModal';
 import MonthFormTable from '@/components/MonthFormTable';
 import type { WorkRecordRow } from '@/types';
 import type { ApiError } from '@/api/client';
 
 export default function MonthForm() {
+  const { t } = useTranslation();
   const { year: yearParam, month: monthParam } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -41,6 +44,7 @@ export default function MonthForm() {
   const [hasNoRecords, setHasNoRecords] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [confirmEmptyDaysModal, setConfirmEmptyDaysModal] = useState<{ days: number[] } | null>(null);
+  const [confirmNavigateModal, setConfirmNavigateModal] = useState<string | null>(null);
   const isDirtyRef = useRef(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -140,7 +144,7 @@ export default function MonthForm() {
   }
 
   function handleExportCSV() {
-    const headers = ['日付', '曜', '休', '開始', '終了', '休憩(分)', '総業務時間', '備考'];
+    const headers = ['日付', '曜', '休', '開始', '終了', '休憩(分)', '実働', '備考'];
     const toM = (t: string | null | undefined) => (t ? toHHmm(t) || t : '');
     const lines = [
       headers.join(','),
@@ -169,8 +173,17 @@ export default function MonthForm() {
   }
 
   function handleNavigateAway(to: string) {
-    if (isDirtyRef.current && !window.confirm('Bạn có thay đổi chưa lưu. Rời đi?')) return;
+    if (isDirtyRef.current) {
+      setConfirmNavigateModal(to);
+      return;
+    }
     navigate(to);
+  }
+
+  function handleConfirmNavigate() {
+    const dest = confirmNavigateModal;
+    setConfirmNavigateModal(null);
+    if (dest) navigate(dest);
   }
 
   useEffect(() => {
@@ -199,7 +212,7 @@ export default function MonthForm() {
         });
         await createMonthRecords(year, month, records);
         isDirtyRef.current = false;
-        toast('Đã lưu.', 'success');
+        toast(t('monthForm.saved'), 'success');
         navigate('/', { replace: true });
       } else if (isEdit) {
         const records: UpdateRecordInput[] = rows
@@ -220,12 +233,12 @@ export default function MonthForm() {
         await updateRecords(records);
         isDirtyRef.current = false;
         setSaving(false);
-        toast('Đã lưu.', 'success');
+        toast(t('monthForm.saved'), 'success');
         navigate('/', { replace: true });
       }
     } catch (err) {
       const apiErr = err as ApiError;
-      setError(apiErr.message || (apiErr.data?.message as string) || 'Lỗi');
+      setError(apiErr.message || (apiErr.data?.message as string) || t('monthForm.error'));
       setSaving(false);
     }
   }
@@ -234,7 +247,7 @@ export default function MonthForm() {
     e.preventDefault();
     setError('');
     if (invalidTimeRows.length > 0) {
-      setError('開始 phải nhỏ hơn 終了. Kiểm tra các ngày: ' + invalidTimeRows.map((r) => r.day).join(', ') + '.');
+      setError(t('monthForm.timeError', { days: invalidTimeRows.map((r) => r.day).join(', ') }));
       return;
     }
     if (emptyWorkDays.length > 0) {
@@ -254,7 +267,7 @@ export default function MonthForm() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-neutral-900">
-        <LoadingOverlay message="Đang tải..." />
+        <LoadingOverlay message={t('app.loading')} />
       </div>
     );
   }
@@ -263,16 +276,16 @@ export default function MonthForm() {
     return (
       <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto bg-white dark:bg-neutral-900">
         <section className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-8 text-center bg-white dark:bg-neutral-800/50">
-          <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-100 mb-2">Không thể tạo</h2>
+          <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-100 mb-2">{t('monthForm.cannotCreate')}</h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-            Chỉ được tạo tối đa đến tháng sau so với hiện tại. Tháng {year}年{String(month).padStart(2, '0')}月 chưa cho phép tạo.
+            {t('monthForm.cannotCreateHint', { year, month: String(month).padStart(2, '0') })}
           </p>
           <button
             type="button"
             onClick={() => navigate('/', { replace: true })}
             className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
           >
-            Về Dashboard
+            {t('monthForm.backDashboard')}
           </button>
         </section>
       </div>
@@ -284,12 +297,12 @@ export default function MonthForm() {
       <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto bg-white dark:bg-neutral-900">
         <section className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-8 text-center bg-white dark:bg-neutral-800/50">
           <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
-            {loadError ? 'Lỗi tải dữ liệu' : 'Chưa có bản ghi'}
+            {loadError ? t('monthForm.loadError') : t('monthForm.noRecords')}
           </h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
             {loadError
-              ? 'Không thể tải dữ liệu tháng. Kiểm tra kết nối và thử lại.'
-              : `Tháng ${year}年${String(month).padStart(2, '0')}月 chưa có dữ liệu. Vui lòng tạo mới từ Dashboard.`}
+              ? t('monthForm.loadErrorHint')
+              : t('monthForm.noDataHint', { year, month: String(month).padStart(2, '0') })}
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
             {loadError && (
@@ -298,7 +311,7 @@ export default function MonthForm() {
                 onClick={() => fetchMonth()}
                 className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
               >
-                Thử lại
+                {t('monthForm.retry')}
               </button>
             )}
             <button
@@ -306,7 +319,7 @@ export default function MonthForm() {
               onClick={() => navigate('/', { replace: true })}
               className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
-              Về Dashboard
+              {t('monthForm.backDashboard')}
             </button>
           </div>
         </section>
@@ -324,7 +337,7 @@ export default function MonthForm() {
           {label}
         </div>
         <div className="text-center text-lg font-semibold text-neutral-900 dark:text-neutral-100 print:text-base">
-          作業実績表
+          {t('monthForm.workRecord')}
         </div>
         <div className="text-right flex items-center justify-end gap-2">
           <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 print:text-base">{displayName}</span>
@@ -333,7 +346,7 @@ export default function MonthForm() {
             onClick={() => handleNavigateAway('/')}
             className="print:hidden text-sm border border-teal-300 dark:border-teal-700 rounded-md px-3 py-1 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
           >
-            Về Dashboard
+            {t('monthForm.backDashboard')}
           </button>
         </div>
       </header>
@@ -361,14 +374,14 @@ export default function MonthForm() {
               onClick={() => handleNavigateAway('/')}
               className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
-              Hủy
+              {t('dashboard.cancel')}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
-              Lưu
+              {t('monthForm.save')}
             </button>
           </div>
         )}
@@ -380,33 +393,40 @@ export default function MonthForm() {
               onClick={handlePrint}
               className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
-              In
+              {t('monthForm.print')}
             </button>
             <button
               type="button"
               onClick={handleExportCSV}
               className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
-              Xuất CSV
+              {t('monthForm.exportCsv')}
             </button>
             <button
               type="button"
               onClick={() => navigate(`/month/${year}/${month}/edit`)}
               className="border border-teal-600 dark:border-teal-500 bg-teal-600 dark:bg-teal-500 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-teal-700 dark:hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
-              Sửa
+              {t('dashboard.edit')}
             </button>
           </div>
         )}
       </form>
 
-      {saving && <LoadingOverlay message="Đang lưu..." />}
+      {saving && <LoadingOverlay message={t('monthForm.saving')} />}
 
       {confirmEmptyDaysModal && (
         <ConfirmEmptyDaysModal
           days={confirmEmptyDaysModal.days}
           onConfirm={handleConfirmEmptyDaysSave}
           onCancel={() => setConfirmEmptyDaysModal(null)}
+        />
+      )}
+
+      {confirmNavigateModal && (
+        <ConfirmNavigateModal
+          onConfirm={handleConfirmNavigate}
+          onCancel={() => setConfirmNavigateModal(null)}
         />
       )}
     </div>

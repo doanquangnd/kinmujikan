@@ -2,6 +2,7 @@
  * API client: dùng HttpOnly Cookie (credentials: 'include').
  * Token được lưu trong cookie, không dùng localStorage.
  */
+import i18n from '@/i18n';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -29,7 +30,7 @@ export async function api_request<T = Record<string, unknown>>(
       err.message?.includes('fetch') ||
       err.message?.includes('Failed') ||
       err.cause?.code === 'ECONNREFUSED'
-        ? 'Không kết nối được API. Chạy vercel dev để chạy app local.'
+        ? i18n.t('api.connectionError')
         : err.message;
     const apiErr: ApiError = new Error(msg) as ApiError;
     apiErr.status = 0;
@@ -48,7 +49,7 @@ export async function api_request<T = Record<string, unknown>>(
     const message =
       (data.message as string) ||
       (data.error as string) ||
-      (res.status === 500 ? 'Lỗi máy chủ (500).' : 'Request failed');
+      (res.status === 500 ? i18n.t('api.serverError') : 'Request failed');
     const apiErr: ApiError = new Error(message) as ApiError;
     apiErr.status = res.status;
     apiErr.data = data;

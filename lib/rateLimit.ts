@@ -1,6 +1,13 @@
 /**
  * Rate limit dùng PostgreSQL (Neon).
  * Giới hạn số request theo IP + endpoint trong cửa sổ thời gian cố định (1 phút).
+ *
+ * X-Forwarded-For / reverse proxy:
+ * - Lấy IP từ x-forwarded-for hoặc x-real-ip (Vercel, nginx, Cloudflare...).
+ * - Trên Vercel: header do platform set, đáng tin cậy.
+ * - Khi dùng reverse proxy tự quản lý: proxy PHẢI ghi đè/append IP thật, không tin header từ client.
+ * - Nếu proxy không tin cậy: attacker có thể giả mạo X-Forwarded-For để bypass rate limit.
+ * - Khuyến nghị: chỉ tin X-Forwarded-For khi đứng sau proxy mình kiểm soát.
  */
 import { sql } from './db.js';
 
@@ -8,6 +15,8 @@ const WINDOW_SECONDS = 60;
 const LIMITS: Record<string, number> = {
   login: 5,
   register: 3,
+  change_password: 3,
+  work_records_write: 30,
 };
 
 interface RateLimitRequest {
@@ -16,7 +25,7 @@ interface RateLimitRequest {
 }
 
 /**
- * Lấy IP từ request (Vercel/proxy).
+ * Lấy IP từ request. Ưu tiên x-forwarded-for, x-real-ip (khi đứng sau reverse proxy).
  */
 export function get_client_ip(req: RateLimitRequest): string {
   const forwarded = req.headers?.['x-forwarded-for'] || req.headers?.['x-real-ip'];

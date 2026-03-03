@@ -5,6 +5,7 @@
 import { sql } from '../../lib/db.js';
 import bcrypt from 'bcryptjs';
 import { require_auth } from '../../lib/auth.js';
+import { check_rate_limit } from '../../lib/rateLimit.js';
 import { json_response, get_cors_origin } from '../../lib/response.js';
 import { changePasswordSchema } from '../../lib/validation.js';
 
@@ -35,6 +36,16 @@ export default async function handler(req: AuthRequest, res: AuthResponse): Prom
   }
   if (req.method !== 'POST') {
     json_response(res, 405, { error: 'Method Not Allowed' }, { req });
+    return;
+  }
+
+  const rate = await check_rate_limit(req, 'change_password');
+  if (!rate.allowed) {
+    res.setHeader('Retry-After', String(rate.retryAfter));
+    json_response(res, 429, {
+      error: 'Too Many Requests',
+      message: `Quá nhiều lần thử. Thử lại sau ${rate.retryAfter} giây.`,
+    }, { req });
     return;
   }
 

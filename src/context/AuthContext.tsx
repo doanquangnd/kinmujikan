@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchMe, logout as apiLogout } from '@/api/auth';
+import { useToast } from '@/context/ToastContext';
 import type { User } from '@/types';
 
 interface AuthContextValue {
@@ -16,8 +18,10 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchMe()
@@ -31,8 +35,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = () => {
-    apiLogout().catch(() => { /* ignore */ });
-    setUser(null);
+    apiLogout()
+      .then(() => {
+        toast(t('auth.logoutSuccess'), 'success');
+      })
+      .catch(() => {
+        toast(t('auth.logoutFail'), 'error');
+      })
+      .finally(() => {
+        setUser(null);
+      });
   };
 
   return (
