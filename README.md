@@ -1,54 +1,83 @@
 # 勤務時間 (Kinmu Jikan)
 
-Ứng dụng quản lý, ghi chú thời gian làm việc theo tháng với template phổ biến tại Nhật. 
+日本の勤務時間管理に特化したWebアプリケーション。月単位で勤務記録を入力・管理し、実働時間・時間外・深夜・遅刻・早退を自動計算します。
 
-React + Vite + TailwindCSS, API Node.js (Neon Postgres) .
+**日本語** | [Tiếng Việt](./README.vi.md)
 
-Xem [CHANGELOG.md](./CHANGELOG.md) để biết lịch sử thay đổi.
+### スクリーンショット
 
-## Yêu cầu
+![ダッシュボード](./pics/Dashboard.png)
+
+![ダッシュボード - 新規追加](./pics/dashboard-new.png)
+
+![勤務記録表](./pics/update.png)
+
+## 概要
+
+勤務時間は、日本企業でよく使われる勤務実績表の形式に沿って、以下の機能を提供します。
+
+- **月単位の勤務記録**: 日付ごとに出勤・退勤・休憩時間を入力
+- **就業時間**: 所定労働時間（開始・終了）を設定し、時間外・深夜・遅刻・早退を自動計算
+- **区分**: 出勤、有給、代休、特休、欠勤を選択可能（土日祝は休日として自動設定、表示は空欄）
+- **休日表示**: 土曜・日曜・祝日を自動表示
+- **言語**: 日本語・ベトナム語対応
+- **ダークモード**: ライト/ダークテーマ切り替え
+- **印刷**: 1ページA4に収まるレイアウト、エクセル、CSV出力可
+
+## 技術スタック
+
+- **フロントエンド**: React 19 + Vite 7 + TailwindCSS 4 + TypeScript
+- **API**: Node.js Serverless (Vercel)
+- **データベース**: Neon Postgres
+
+## 必要環境
 
 - Node.js 18+
-- Tài khoản Vercel (deploy)
-- Neon Postgres (qua Vercel Storage)
+- Vercel アカウント（デプロイ用）
+- Neon Postgres（Vercel Storage 経由）
 
-## Cấu trúc
+## プロジェクト構成
 
 ```
-├── api/           # Serverless API (auth, work-records, cron)
-├── lib/           # db, auth, rateLimit, turnstile (dùng bởi api/)
-├── sql/           # schema.sql
-├── src/           # React app (TypeScript)
+├── api/           # Serverless API（auth, work-records, cron）
+├── lib/           # db, auth, rateLimit, turnstile
+├── sql/           # schema.sql, migration
+├── src/           # React アプリ（TypeScript）
 ├── public/
+├── pics/          # README用画像
 ├── scripts/
 └── docs/
 ```
 
-## Cài đặt local
+## ローカル環境のセットアップ
 
 ```bash
 npm install
 cp .env.example .env
-# Sửa .env: POSTGRES_URL (hoặc DATABASE_URL), JWT_SECRET
+# .env を編集: POSTGRES_URL（または DATABASE_URL）, JWT_SECRET
 vercel dev
 ```
 
-Mở http://localhost:3000. Frontend và API chạy cùng process.
+http://localhost:3000 を開く。フロントエンドとAPIが同一プロセスで動作します。
 
-**Lưu ý:** Chỉ dùng `npm run dev` khi chạy frontend thuần (không có API). Để có API local, dùng `vercel dev`.
+**注意:** API なしでフロントエンドのみ実行する場合は `npm run dev` を使用。API を含むローカル環境では `vercel dev` を使用してください。
 
-## Deploy Vercel
+## Vercel へのデプロイ
 
-1. Vercel Dashboard > Project > **Settings** > **General** > Root Directory: để trống hoặc `.` (project root)
-2. Storage > Create Database > Postgres. Chạy `sql/schema.sql` trong Query tab.
-3. Environment Variables: `JWT_SECRET`, `POSTGRES_URL` (tự động khi thêm Postgres), `CRON_SECRET` (tối thiểu 16 ký tự, cho cron dọn rate_limit)
-4. Push lên GitHub – Vercel tự deploy.
+1. Vercel Dashboard > Project > **Settings** > **General** > Root Directory: 空欄または `.`
+2. Storage > Create Database > Postgres。Query タブで `sql/schema.sql` を実行。
+3. Environment Variables: `JWT_SECRET`, `POSTGRES_URL`（Postgres 追加時に自動設定）, `CRON_SECRET`（16文字以上、cron 用）
+4. GitHub にプッシュすると Vercel が自動デプロイ
 
-## Test local với DB production
+## 本番DBでローカルテスト
 
-1. Vercel Dashboard > Storage > Postgres > lấy connection string
-2. Thêm vào `.env`: `POSTGRES_URL=...`, `JWT_SECRET=...` (cùng giá trị trên Vercel)
-3. Chạy `vercel dev`
-4. Mở http://localhost:3000
+1. Vercel Dashboard > Storage > Postgres > 接続文字列を取得
+2. `.env` に追加: `POSTGRES_URL=...`, `JWT_SECRET=...`（Vercel と同じ値）
+3. `vercel dev` を実行
+4. http://localhost:3000 を開く
 
-Xem `docs/TESTING.md` chi tiết.
+詳細は `docs/TESTING.md` を参照。
+
+## 変更履歴
+
+[CHANGELOG.md](./CHANGELOG.md) を参照。

@@ -88,7 +88,7 @@ h1, h2, h3 {
     color: #1a1a1a !important;
   }
 
-  /* Màu nền hàng ngày nghỉ (cuối tuần, ngày lễ, rest_day) */
+  /* Màu nền hàng ngày nghỉ (cuối tuần, ngày lễ, category khác shutkin) */
   tr.print-rest td {
     background: #e5e5e5 !important;
     color: #b91c1c !important;

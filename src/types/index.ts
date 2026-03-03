@@ -2,6 +2,8 @@
  * Shared types cho ứng dụng Kinmu Jikan.
  */
 
+export type WorkCategory = 'shutkin' | 'yukyu' | 'daikyu' | 'tokkyu' | 'kekkin' | 'kyuujitsu';
+
 export interface WorkRecord {
   id: number;
   work_date: string;
@@ -9,8 +11,10 @@ export interface WorkRecord {
   time_end: string | null;
   break_minutes: number | null;
   note: string | null;
-  /** API trả 0 | 1, frontend dùng boolean */
-  rest_day: boolean | number;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
+  /** kyuujitsu = thứ 7, chủ nhật, ngày lễ; hiển thị trống */
+  category?: WorkCategory | '';
 }
 
 export interface WorkRecordRow {
@@ -24,7 +28,10 @@ export interface WorkRecordRow {
   time_end: string | null;
   break_minutes: number | null;
   note: string | null;
-  rest_day: boolean;
+  scheduled_start: string | null;
+  scheduled_end: string | null;
+  /** kyuujitsu cho T7, CN, ngày lễ (hiển thị trống); shutkin|yukyu|daikyu|tokkyu|kekkin cho ngày thường */
+  category: WorkCategory | '';
 }
 
 export interface User {

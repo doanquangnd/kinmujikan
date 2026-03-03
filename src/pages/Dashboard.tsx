@@ -27,6 +27,8 @@ export default function Dashboard() {
   useFocusTrap(logoutModalRef, logoutConfirmOpen);
   const [modalYear, setModalYear] = useState(currentYear);
   const [modalMonth, setModalMonth] = useState(1);
+  const [modalScheduledStart, setModalScheduledStart] = useState('09:30');
+  const [modalScheduledEnd, setModalScheduledEnd] = useState('18:30');
   const [modalTimeStart, setModalTimeStart] = useState('09:30');
   const [modalTimeEnd, setModalTimeEnd] = useState('18:30');
   const [modalBreak, setModalBreak] = useState(60);
@@ -87,7 +89,16 @@ export default function Dashboard() {
     if (modalYear === year && existingMonthsInYear.includes(modalMonth)) return;
     if (isMoreThanOneMonthAhead(modalYear, modalMonth)) return;
     setModalOpen(false);
-    navigate(`/month/new?year=${modalYear}&month=${modalMonth}&timeStart=${modalTimeStart}&timeEnd=${modalTimeEnd}&breakMinutes=${modalBreak}`);
+    const params = new URLSearchParams({
+      year: String(modalYear),
+      month: String(modalMonth),
+      scheduledStart: modalScheduledStart,
+      scheduledEnd: modalScheduledEnd,
+      timeStart: modalTimeStart,
+      timeEnd: modalTimeEnd,
+      breakMinutes: String(modalBreak),
+    });
+    navigate(`/month/new?${params.toString()}`);
   }
 
   const dashboardYears = Array.from({ length: 11 }, (_, i) => currentYear - i);
@@ -310,58 +321,51 @@ export default function Dashboard() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.startTime')}</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  placeholder="09:30"
-                  value={modalTimeStart}
-                  onChange={(e) => {
-                    const raw = e.target.value.trim();
-                    if (!raw) {
-                      setModalTimeStart('');
-                      return;
-                    }
-                    const formatted = raw.replace(/\D/g, '').length === 4 ? toHHmm(raw) : null;
-                    setModalTimeStart(formatted || raw);
-                  }}
-                  onBlur={(e) => {
-                    const v = e.target.value.trim();
-                    if (v) {
-                      const normalized = toHHmm(v);
-                      setModalTimeStart(normalized || v);
-                    }
-                  }}
-                  className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.endTime')}</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  placeholder="18:30"
-                  value={modalTimeEnd}
-                  onChange={(e) => {
-                    const raw = e.target.value.trim();
-                    if (!raw) {
-                      setModalTimeEnd('');
-                      return;
-                    }
-                    const formatted = raw.replace(/\D/g, '').length === 4 ? toHHmm(raw) : null;
-                    setModalTimeEnd(formatted || raw);
-                  }}
-                  onBlur={(e) => {
-                    const v = e.target.value.trim();
-                    if (v) {
-                      const normalized = toHHmm(v);
-                      setModalTimeEnd(normalized || v);
-                    }
-                  }}
-                  className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono"
-                />
+                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.scheduledTime')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">{t('dashboard.scheduledStart')}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="09:30"
+                      value={modalScheduledStart}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (!raw) { setModalScheduledStart(''); return; }
+                        const formatted = raw.replace(/\D/g, '').length === 4 ? toHHmm(raw) : null;
+                        setModalScheduledStart(formatted || raw);
+                      }}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v) setModalScheduledStart(toHHmm(v) || v);
+                      }}
+                      className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">{t('dashboard.scheduledEnd')}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="18:30"
+                      value={modalScheduledEnd}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (!raw) { setModalScheduledEnd(''); return; }
+                        const formatted = raw.replace(/\D/g, '').length === 4 ? toHHmm(raw) : null;
+                        setModalScheduledEnd(formatted || raw);
+                      }}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v) setModalScheduledEnd(toHHmm(v) || v);
+                      }}
+                      className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                    />
+                  </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.breakMinutes')}</label>
@@ -372,6 +376,53 @@ export default function Dashboard() {
                   onChange={(e) => setModalBreak(Number(e.target.value) || 0)}
                   className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-neutral-800 dark:text-neutral-200">{t('dashboard.quickInput')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">{t('dashboard.quickStart')}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="09:30"
+                      value={modalTimeStart}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (!raw) { setModalTimeStart(''); return; }
+                        const formatted = raw.replace(/\D/g, '').length === 4 ? toHHmm(raw) : null;
+                        setModalTimeStart(formatted || raw);
+                      }}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v) setModalTimeStart(toHHmm(v) || v);
+                      }}
+                      className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">{t('dashboard.quickEnd')}</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="18:30"
+                      value={modalTimeEnd}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (!raw) { setModalTimeEnd(''); return; }
+                        const formatted = raw.replace(/\D/g, '').length === 4 ? toHHmm(raw) : null;
+                        setModalTimeEnd(formatted || raw);
+                      }}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v) setModalTimeEnd(toHHmm(v) || v);
+                      }}
+                      className="w-full border border-neutral-300 dark:border-neutral-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-mono"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex gap-2 mt-6">

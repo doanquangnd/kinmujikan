@@ -55,7 +55,9 @@ interface DbRow {
   time_end?: string | null;
   break_minutes?: number | null;
   note?: string | null;
-  rest_day?: boolean | number;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
+  category?: string | null;
 }
 
 export default async function handler(req: WorkRecordsRequest, res: WorkRecordsResponse): Promise<void> {
@@ -109,7 +111,7 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
         const last = new Date(year, month, 0).getDate();
         const to = `${year}-${String(month).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
         const result = await sql`
-          SELECT id, work_date, time_start, time_end, break_minutes, note, rest_day
+          SELECT id, work_date, time_start, time_end, break_minutes, note, scheduled_start, scheduled_end, category
           FROM work_records
           WHERE user_id = ${user_id} AND work_date >= ${from} AND work_date <= ${to}
           ORDER BY work_date
@@ -133,7 +135,9 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
             time_end: r.time_end ? String(r.time_end).slice(0, 5) : null,
             break_minutes: r.break_minutes != null ? parseInt(String(r.break_minutes), 10) : null,
             note: r.note ?? null,
-            rest_day: !!r.rest_day,
+            scheduled_start: r.scheduled_start ? String(r.scheduled_start).slice(0, 5) : null,
+            scheduled_end: r.scheduled_end ? String(r.scheduled_end).slice(0, 5) : null,
+            category: (r.category == null || r.category === '') ? '' : String(r.category),
           };
         });
         const queryMs = Math.round(Date.now() - t0);
@@ -179,6 +183,8 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
       const y = parseInt(String(body.year || '0'), 10);
       const m = parseInt(String(body.month || '0'), 10);
       const records = (body.records || []) as Record<string, unknown>[];
+      const scheduled_start = normalize_hhmm(body.scheduledStart ?? body.scheduled_start);
+      const scheduled_end = normalize_hhmm(body.scheduledEnd ?? body.scheduled_end);
 
       if (y < 2000 || y > 2100 || m < 1 || m > 12) {
         json_response(res, 400, { error: 'Bad Request', message: 'year, month không hợp lệ' }, { req });
@@ -209,6 +215,7 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
         return;
       }
 
+      const valid_categories = ['shutkin', 'yukyu', 'daikyu', 'tokkyu', 'kekkin', 'kyuujitsu'];
       const last_day = new Date(y, m, 0).getDate();
       const client = getNeonClient();
       const insertQueries: ReturnType<typeof client>[] = [];
@@ -220,10 +227,13 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
         const time_end = normalize_hhmm(r.time_end);
         const break_minutes = normalize_break(r.break_minutes);
         const note = r.note != null ? String(r.note).trim().slice(0, 500) || null : null;
-        const rest_day = r.rest_day ? 1 : 0;
+        const catVal = r.category != null ? String(r.category) : '';
+        const cat = (catVal === '' || catVal === 'kyuujitsu') ? 'kyuujitsu' : (valid_categories.includes(catVal) ? catVal : 'shutkin');
+        const sched_start = normalize_hhmm(r.scheduled_start ?? r.scheduledStart) ?? scheduled_start;
+        const sched_end = normalize_hhmm(r.scheduled_end ?? r.scheduledEnd) ?? scheduled_end;
         insertQueries.push(
-          client`INSERT INTO work_records (user_id, work_date, time_start, time_end, break_minutes, note, rest_day)
-            VALUES (${user_id}, ${work_date}, ${time_start}, ${time_end}, ${break_minutes}, ${note}, ${rest_day})`
+          client`INSERT INTO work_records (user_id, work_date, time_start, time_end, break_minutes, note, scheduled_start, scheduled_end, category)
+            VALUES (${user_id}, ${work_date}, ${time_start}, ${time_end}, ${break_minutes}, ${note}, ${sched_start}, ${sched_end}, ${cat})`
         );
       }
       if (insertQueries.length > 0) {
@@ -250,6 +260,7 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
       `;
       const allowedSet = new Set((allowed.rows as { id: number }[]).map((r) => parseInt(String(r.id), 10)));
 
+      const valid_categories = ['shutkin', 'yukyu', 'daikyu', 'tokkyu', 'kekkin', 'kyuujitsu'];
       const client = getNeonClient();
       const updateQueries: ReturnType<typeof client>[] = [];
       for (const r of records) {
@@ -259,10 +270,17 @@ export default async function handler(req: WorkRecordsRequest, res: WorkRecordsR
         const time_end = normalize_hhmm(r.time_end);
         const break_minutes = normalize_break(r.break_minutes);
         const note = r.note != null ? String(r.note).trim().slice(0, 500) || null : null;
-        const rest_day = r.rest_day ? 1 : 0;
+        const catVal = r.category != null ? String(r.category) : '';
+        const cat = (catVal === '' || catVal === 'kyuujitsu' || valid_categories.includes(catVal)) ? (catVal === '' ? 'kyuujitsu' : catVal) : undefined;
+        const scheduled_start = normalize_hhmm(r.scheduled_start ?? r.scheduledStart) ?? undefined;
+        const scheduled_end = normalize_hhmm(r.scheduled_end ?? r.scheduledEnd) ?? undefined;
         updateQueries.push(
           client`UPDATE work_records
-            SET time_start = ${time_start}, time_end = ${time_end}, break_minutes = ${break_minutes}, note = ${note}, rest_day = ${rest_day}, updated_at = NOW()
+            SET time_start = ${time_start}, time_end = ${time_end}, break_minutes = ${break_minutes}, note = ${note},
+                scheduled_start = COALESCE(${scheduled_start ?? null}, scheduled_start),
+                scheduled_end = COALESCE(${scheduled_end ?? null}, scheduled_end),
+                category = COALESCE(${cat ?? null}, category),
+                updated_at = NOW()
             WHERE id = ${id} AND user_id = ${user_id}`
         );
       }

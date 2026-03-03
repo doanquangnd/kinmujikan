@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS work_records (
   time_end TIME DEFAULT NULL,
   break_minutes INT DEFAULT NULL,
   note VARCHAR(500) DEFAULT NULL,
-  rest_day SMALLINT NOT NULL DEFAULT 0,
+  scheduled_start TIME DEFAULT NULL,
+  scheduled_end TIME DEFAULT NULL,
+  category VARCHAR(10) DEFAULT 'shutkin',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, work_date)

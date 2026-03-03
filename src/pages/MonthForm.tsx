@@ -6,6 +6,8 @@ import type { CreateRecordInput, UpdateRecordInput } from '@/api/workRecords';
 import { isMoreThanOneMonthAhead, getCurrentYearInAppTimezone, getCurrentMonthInAppTimezone } from '@/utils/dateHelpers';
 import { buildEmptyRows, mergeRecordsIntoRows } from '@/utils/workRecordRows';
 import { calcWorkMinutes, minutesToTimeString, toHHmm, timeToMinutes } from '@/utils/formatTime';
+import { calcOvertimeForRow, formatOvertimeHours } from '@/utils/overtimeCalc';
+import { exportToExcel } from '@/utils/exportExcel';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import LoadingOverlay from '@/components/LoadingOverlay';
@@ -28,12 +30,16 @@ export default function MonthForm() {
   const timeStart = searchParams.get('timeStart') || '';
   const timeEnd = searchParams.get('timeEnd') || '';
   const breakMinutes = Number(searchParams.get('breakMinutes')) || 0;
+  const scheduledStartParam = searchParams.get('scheduledStart') || '';
+  const scheduledEndParam = searchParams.get('scheduledEnd') || '';
 
-  const defaults = isNew && (timeStart || timeEnd)
+  const defaults = isNew
     ? {
         timeStart: timeStart ? toHHmm(timeStart) || timeStart : '',
         timeEnd: timeEnd ? toHHmm(timeEnd) || timeEnd : '',
         breakMinutes,
+        scheduledStart: scheduledStartParam ? toHHmm(scheduledStartParam) || scheduledStartParam : '09:30',
+        scheduledEnd: scheduledEndParam ? toHHmm(scheduledEndParam) || scheduledEndParam : '18:30',
       }
     : null;
 
@@ -51,7 +57,7 @@ export default function MonthForm() {
 
   const initialRows = useMemo(
     () => buildEmptyRows(year, month, defaults),
-    [year, month, defaults?.timeStart, defaults?.timeEnd, defaults?.breakMinutes]
+    [year, month, defaults?.timeStart, defaults?.timeEnd, defaults?.breakMinutes, defaults?.scheduledStart, defaults?.scheduledEnd]
   );
 
   const fetchMonth = useCallback(() => {
@@ -91,8 +97,7 @@ export default function MonthForm() {
     const invalid: { index: number; day: number }[] = [];
     const empty: { index: number; day: number }[] = [];
     rows.forEach((row, i) => {
-      const isRest = row.weekdayIndex === 0 || row.weekdayIndex === 6 || row.holidayName || row.rest_day;
-      if (isRest) return;
+      if (row.category !== 'shutkin') return;
       const startM = timeToMinutes(row.time_start);
       const endM = timeToMinutes(row.time_end);
       if (startM != null && endM != null && startM >= endM) invalid.push({ index: i, day: row.day });
@@ -101,13 +106,23 @@ export default function MonthForm() {
     return { invalidTimeRows: invalid, emptyWorkDays: empty };
   }, [rows]);
 
+  const scheduledStart = rows[0]?.scheduled_start ?? defaults?.scheduledStart ?? '09:30';
+  const scheduledEnd = rows[0]?.scheduled_end ?? defaults?.scheduledEnd ?? '18:30';
+
+  function handleScheduledChange(start: string | null, end: string | null) {
+    isDirtyRef.current = true;
+    const s = start || '09:30';
+    const e = end || '18:30';
+    setRows((prev) => prev.map((r) => ({ ...r, scheduled_start: s, scheduled_end: e })));
+  }
+
   function updateRow(dayIndex: number, field: keyof WorkRecordRow, value: unknown) {
     isDirtyRef.current = true;
     setRows((prev) => {
       const next = [...prev];
       const row = next[dayIndex];
       const updated = { ...row, [field]: value } as WorkRecordRow;
-      if (field === 'rest_day' && value === true) {
+      if (field === 'category' && value !== 'shutkin') {
         updated.time_start = null;
         updated.time_end = null;
         updated.break_minutes = null;
@@ -121,8 +136,7 @@ export default function MonthForm() {
     if (dayIndex <= 0) return;
     const prev = rows[dayIndex - 1];
     const row = rows[dayIndex];
-    const isWeekendOrHoliday = row.weekdayIndex === 0 || row.weekdayIndex === 6 || row.holidayName;
-    if (isWeekendOrHoliday) return;
+    if (row.category !== 'shutkin') return;
     const ts = prev.time_start != null && prev.time_start !== '' ? toHHmm(prev.time_start) || prev.time_start : null;
     const te = prev.time_end != null && prev.time_end !== '' ? toHHmm(prev.time_end) || prev.time_end : null;
     if (!ts || !te) return;
@@ -143,22 +157,58 @@ export default function MonthForm() {
     window.print();
   }
 
+  async function handleExportExcel() {
+    try {
+      const blob = await exportToExcel({
+        rows,
+        year,
+        month,
+        scheduledStart: scheduledStart || '09:00',
+        scheduledEnd: scheduledEnd || '18:00',
+        displayName: user?.display_name || user?.email || '',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${year}-${String(month).padStart(2, '0')}_kinmu.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast(t('monthForm.exportExcelSuccess'), 'success');
+    } catch (err) {
+      toast(t('monthForm.exportExcelError'), 'error');
+    }
+  }
+
   function handleExportCSV() {
-    const headers = ['日付', '曜', '休', '開始', '終了', '休憩(分)', '実働', '備考'];
+    const headers = ['日付', '曜', '休', '区分', '開始', '終了', '休憩(分)', '実働', '時間外', '深夜', '遅刻', '早退', '備考'];
     const toM = (t: string | null | undefined) => (t ? toHHmm(t) || t : '');
+    const schedStart = scheduledStart || '09:30';
+    const schedEnd = scheduledEnd || '18:30';
     const lines = [
       headers.join(','),
       ...rows.map((row) => {
-        const mins = calcWorkMinutes(row.time_start, row.time_end, row.break_minutes);
-        const rest = row.weekdayIndex === 0 || row.weekdayIndex === 6 || row.holidayName || row.rest_day ? '休' : '';
+        const overtime = calcOvertimeForRow(
+          row.time_start,
+          row.time_end,
+          row.break_minutes,
+          schedStart,
+          schedEnd,
+          row.category
+        );
+        const rest = row.weekdayIndex === 0 || row.weekdayIndex === 6 || row.holidayName ? '休' : '';
         return [
           row.work_date,
           row.weekday,
           rest,
+          row.category,
           toM(row.time_start),
           toM(row.time_end),
           row.break_minutes ?? '',
-          minutesToTimeString(mins),
+          minutesToTimeString(overtime.jitsukadou_minutes),
+          formatOvertimeHours(overtime.jikangai_hours) || '',
+          formatOvertimeHours(overtime.shinya_hours) || '',
+          formatOvertimeHours(overtime.chikoku_hours) || '',
+          formatOvertimeHours(overtime.soutai_hours) || '',
           (row.note ?? '').replace(/,/g, ' '),
         ].join(',');
       }),
@@ -197,37 +247,46 @@ export default function MonthForm() {
     setError('');
     try {
       if (isNew) {
+        const schedStart = scheduledStart ? toHHmm(scheduledStart) || scheduledStart : '09:30';
+        const schedEnd = scheduledEnd ? toHHmm(scheduledEnd) || scheduledEnd : '18:30';
         const records: CreateRecordInput[] = rows.map((r) => {
-          const isWeekdayRest = !(r.weekdayIndex === 0 || r.weekdayIndex === 6 || r.holidayName) && r.rest_day;
-          const ts = toHHmm(r.time_start) || null;
-          const te = toHHmm(r.time_end) || null;
+          const isWork = r.category === 'shutkin';
+          const ts = isWork ? (toHHmm(r.time_start) || null) : null;
+          const te = isWork ? (toHHmm(r.time_end) || null) : null;
           return {
             day: r.day,
-            time_start: isWeekdayRest ? null : ts,
-            time_end: isWeekdayRest ? null : te,
-            break_minutes: isWeekdayRest ? null : (r.break_minutes ?? null),
+            time_start: ts,
+            time_end: te,
+            break_minutes: isWork ? (r.break_minutes ?? null) : null,
             note: r.note || null,
-            rest_day: r.rest_day ?? false,
+            category: (r.category === '' || r.category === 'kyuujitsu') ? 'kyuujitsu' : (r.category || 'shutkin'),
           };
         });
-        await createMonthRecords(year, month, records);
+        await createMonthRecords(year, month, records, {
+          scheduledStart: schedStart,
+          scheduledEnd: schedEnd,
+        });
         isDirtyRef.current = false;
         toast(t('monthForm.saved'), 'success');
         navigate('/', { replace: true });
       } else if (isEdit) {
+        const schedStart = scheduledStart ? toHHmm(scheduledStart) || scheduledStart : null;
+        const schedEnd = scheduledEnd ? toHHmm(scheduledEnd) || scheduledEnd : null;
         const records: UpdateRecordInput[] = rows
           .filter((row): row is WorkRecordRow & { id: number } => row.id != null)
           .map((row) => {
-            const isWeekdayRest = !(row.weekdayIndex === 0 || row.weekdayIndex === 6 || row.holidayName) && row.rest_day;
-            const ts = toHHmm(row.time_start) || null;
-            const te = toHHmm(row.time_end) || null;
+            const isWork = row.category === 'shutkin';
+            const ts = isWork ? (toHHmm(row.time_start) || null) : null;
+            const te = isWork ? (toHHmm(row.time_end) || null) : null;
             return {
               id: row.id,
-              time_start: isWeekdayRest ? null : ts,
-              time_end: isWeekdayRest ? null : te,
-              break_minutes: isWeekdayRest ? null : row.break_minutes,
+              time_start: ts,
+              time_end: te,
+              break_minutes: isWork ? row.break_minutes : null,
               note: row.note,
-              rest_day: row.rest_day ?? false,
+              scheduled_start: schedStart,
+              scheduled_end: schedEnd,
+              category: (row.category === '' || row.category === 'kyuujitsu') ? 'kyuujitsu' : (row.category || 'shutkin'),
             };
           });
         await updateRecords(records);
@@ -331,7 +390,7 @@ export default function MonthForm() {
   const displayName = user?.display_name || user?.email || '';
 
   return (
-    <div className="print-area min-h-screen px-4 py-8 max-w-4xl mx-auto bg-white dark:bg-neutral-900 print:py-2 print:px-2">
+    <div className="print-area min-h-screen px-4 py-8 max-w-4xl mx-auto bg-white dark:bg-neutral-900 print:min-h-0 print:py-2 print:px-2">
       <header className="grid grid-cols-3 items-center mb-6 border-b border-neutral-200 dark:border-neutral-700 pb-4 print:mb-4 print:pb-2">
         <div className="text-left text-lg font-semibold text-neutral-900 dark:text-neutral-100 print:text-base">
           {label}
@@ -363,6 +422,9 @@ export default function MonthForm() {
           readOnly={readOnly}
           invalidTimeRows={invalidTimeRows}
           totalMinutes={totalMinutes}
+          scheduledStart={scheduledStart}
+          scheduledEnd={scheduledEnd}
+          onScheduledChange={handleScheduledChange}
           onUpdateRow={updateRow}
           onFillFromPrevious={fillFromPrevious}
         />
@@ -394,6 +456,13 @@ export default function MonthForm() {
               className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
             >
               {t('monthForm.print')}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              className="border border-teal-300 dark:border-teal-700 rounded-md px-4 py-2 text-sm font-medium hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/40 text-teal-800 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 dark:focus:ring-teal-500 focus:ring-inset"
+            >
+              {t('monthForm.exportExcel')}
             </button>
             <button
               type="button"
