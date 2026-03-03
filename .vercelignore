@@ -1,4 +1,1 @@
-# Bỏ qua .ts trong api/lib để tránh conflict với .js đã compile
-# Vercel chỉ dùng .js (tạo bởi build:api)
-api/**/*.ts
-lib/**/*.ts
+# api/**/*.ts và lib/**/*.ts phải có để build:api (tsc) chạy được
