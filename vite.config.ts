@@ -30,7 +30,7 @@ export default defineConfig({
     csp({
       algorithm: 'sha256',
       dev: { run: false },
-      build: { sri: true },
+      build: { sri: false },
       policy: {
         'default-src': ["'self'"],
         'script-src': ["'self'", 'https://challenges.cloudflare.com'],

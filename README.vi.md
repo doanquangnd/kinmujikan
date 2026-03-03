@@ -6,11 +6,11 @@
 
 ### Ảnh giao diện
 
-![Dashboard](./pics/Dashboard.png)
+![Dashboard](./docs/pics/dashboard.png)
 
-![Dashboard - Thêm mới](./pics/dashboard-new.png)
+![Dashboard - Thêm mới](./docs/pics/dashboard-new.png)
 
-![Bảng ghi chép 勤務時間](./pics/update.png)
+![Bảng ghi chép 勤務時間](./docs/pics/update.png)
 
 ## Giới thiệu
 
@@ -22,7 +22,7 @@
 - **Hiển thị ngày nghỉ**: Tự động đánh dấu thứ 7, chủ nhật, ngày lễ Nhật
 - **Đa ngôn ngữ**: Tiếng Nhật, tiếng Việt
 - **Dark mode**: Chuyển đổi giao diện sáng/tối
-- **In**: Nội dung vừa 1 trang A4, export Excel, CSV
+- **In**: PDF, export Excel, CSV
 
 ## Công nghệ
 
